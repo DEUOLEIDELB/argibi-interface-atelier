@@ -1,4 +1,5 @@
 // step-order.js — Liste centralisée des steps (ordre canonique de l'atelier).
+// Source : doc interne.
 // Modifiable seulement par  (les  n'y touchent pas).
 
 export const STEP_ORDER = [

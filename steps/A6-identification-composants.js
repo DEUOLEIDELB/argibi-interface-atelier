@@ -2,6 +2,7 @@
 // Slide 1 : galerie 5 placeholders composants (referentiel, magazine p10).
 // Slide 2 : drag&drop 5 etiquettes vers 5 zones cibles sur la carte Argibi.
 // Slide 3 : 2 colonnes ENTREE/SORTIE + cards composants + input + AJOUTE.
+// Cf. doc interne.
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';

@@ -1,4 +1,4 @@
-// state.js — Persistance localStorage. Source : doc interne §9.
+// state.js — Persistance localStorage. Source : doc interne
 
 const STORAGE_KEY = 'argibi-atelier';
 const VERSION = '1.0';

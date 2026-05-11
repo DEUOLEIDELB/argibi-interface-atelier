@@ -3,6 +3,7 @@
 // "⚠ ATTENTION" hero, sous-titre en dessous. 2 cards cote a cote avec
 // illustrations (carte electronique / batterie externe) + titre + bullets.
 // CTA "C'EST COMPRIS" en bas. Espace = equivalent du clic CTA.
+// Cf. doc interne.
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';

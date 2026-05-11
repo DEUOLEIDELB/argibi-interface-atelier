@@ -1,4 +1,5 @@
 // F1 — Animation finale + code 6 chiffres .
+// Source : doc interne.
 // Pic narratif de l'atelier : 3 temps cinematiques qui ferment l'arc Kurnel.
 //
 // Temps 1 (~3.2s) : les 4 chiffres E3 (C C P P) tombent depuis le haut, puis

@@ -1,4 +1,5 @@
 // B1-preparation-assemblage.js - Page tampon avant les 15 etapes.
+// Source : doc interne.
 //
 // Page d'animateur. Aucune interaction enfant. Une respiration : titre,
 // image-placeholder du poste range, une ligne de consigne, Tuko hote

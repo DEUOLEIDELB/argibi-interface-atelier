@@ -1,4 +1,5 @@
 // D9-activite-capteur.js : "LE CAPTEUR - CONDUCTEUR OU ISOLANT" (page mag 18).
+// Fiche : doc interne.
 // Composants partages :
 //   - `.matrice-8x8--mini` + variantes `.is-on-cyan` (composant 5.1)
 //   - `.tuko-mascotte` (placeholder mascotte)

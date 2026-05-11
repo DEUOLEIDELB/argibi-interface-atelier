@@ -2,6 +2,7 @@
 // Tuko (sprite tuko_hote) centre qui shake doucement + barre de progression
 // qui se remplit en stop-motion. Duree minimum 7s. Bascule auto vers A1.
 // Espace ignore avant 7s (skip silencieux).
+// Cf. doc interne.
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';

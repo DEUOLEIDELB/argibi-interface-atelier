@@ -2,6 +2,7 @@
 // Temps 1 : titre + chemin 5 waypoints (4x ? + Tuko captif final) + CTA prets ?
 // Temps 2 : loot drop boite + pluie de prenoms + CTA on l'ouvre.
 // Lit state.steps.A1.students en defensif (fallback sur pool standalone).
+// Cf. doc interne.
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';

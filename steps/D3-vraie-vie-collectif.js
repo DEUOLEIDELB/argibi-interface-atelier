@@ -1,4 +1,5 @@
 // D3-vraie-vie-collectif.js : "DANS LA VRAIE VIE", intelligence collective.
+// Fiche : doc interne
 // utilise .scenario-card + .scenario-card-grid + .scenario-card__options(--3)
 // + .scenario-card__option (avec .is-active) + .scenario-card.is-decided partages.
 // Zero duplication locale du composant scenario-card.

@@ -1,5 +1,5 @@
 // assets.js — Wrapper Pixi Assets (preload par phase, cache).
-// Source : doc interne §6 + §8.
+// Source : doc interne + §8.
 
 import { Assets } from 'pixi.js';
 

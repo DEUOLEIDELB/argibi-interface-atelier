@@ -1,4 +1,5 @@
 // B2-assemblage-15-etapes.js - Moteur des 15 etapes d'assemblage.
+// Source : doc interne.
 //
 // 3 panneaux egaux (passe / actuel / a venir) + barre 15 segments
 // (.barre-progression partagee). L'animateur avance au rythme du retardataire.

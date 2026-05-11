@@ -1,4 +1,5 @@
 // B3-argibi-termine-question.js - Argibi termine + Le Grand Vote.
+// Source : doc interne.
 //
 // Slide 1 : showcase de l'Argibi monte (rotation CSS + glow + etincelles cyan
 //           via spawnEtincelles partage).

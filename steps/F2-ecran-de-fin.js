@@ -1,4 +1,5 @@
 // F2 — Ecran de fin .
+// Source : doc interne.
 // Page paisible apres le pic d'F1. L'animateur recolte les retours A L'ORAL.
 // Aucune saisie, aucun chip, aucun feu d'artifice : decompression.
 //

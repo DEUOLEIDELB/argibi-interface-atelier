@@ -1,4 +1,5 @@
 // D0-titre-initialisation.js : Carte de chapitre "INITIALISATION".
+// Fiche : doc interne
 // utilise .tuko-mascotte (composant partage), .cta-primary, tokens uniquement.
 
 import { Container } from 'pixi.js';

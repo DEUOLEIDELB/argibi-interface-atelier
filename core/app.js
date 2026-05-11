@@ -1,5 +1,5 @@
 // app.js — Bootstrap Pixi v8. UNE SEULE Application pour toute la session.
-// Source : doc interne §6.
+// Source : doc interne
 
 import { Application } from 'pixi.js';
 import { initAssets, loadBundle, loadBundleInBackground } from './assets.js';

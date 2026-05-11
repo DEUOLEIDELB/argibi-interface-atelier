@@ -3,6 +3,7 @@
 // Compteur absolute top-right. Titre + sous-titre centres vers le bas.
 // Grille 4x2 de cards : face cachee (?) -> clic = flip vers image + label.
 // Pas de CTA suivant : la fleche du footer shell pilote la nav vers A3.
+// Cf. doc interne.
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';

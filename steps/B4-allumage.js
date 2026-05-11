@@ -1,4 +1,5 @@
 // B4-allumage.js - Branchement de la batterie + allumage synchronise.
+// Source : doc interne.
 //
 // Slide 1 : ON BRANCHE LA BATTERIE + .bandeau-pulsant--alerte (rose) qui
 //           passe en --ok (jaune) au clic GO + flash + bascule. Tuko stop

@@ -1,5 +1,5 @@
 // audio.js — Gestion sons + mute global. Pas d'autoplay.
-// Sons préchargés au boot (cf. design system §8).
+// Sons préchargés au boot (cf. design system).
 //
 // Liste des sons disponibles tenue dans `assets/sounds/index.json` (manifest
 // edite a la main par le PM/ des qu'un MP3 est livre dans le dossier).

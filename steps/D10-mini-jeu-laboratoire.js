@@ -1,4 +1,5 @@
 // D10-mini-jeu-laboratoire.js : "LE LABORATOIRE" (chasse aux objets).
+// Fiche : doc interne.
 // Composants partages :
 //   - `.chip` (composant partage) pour les objets classes
 //   - `.input-mega` pour la saisie animateur

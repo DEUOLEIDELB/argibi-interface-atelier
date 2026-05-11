@@ -1,4 +1,4 @@
-// nav.js — API de navigation. Source : doc interne §6.2.
+// nav.js — API de navigation. Source : doc interne
 //
 // Le navAPI est passé à chaque step.enter(container, savedState, navAPI).
 // Il maintient currentStepId, history, unlockedSteps. Il charge dynamiquement

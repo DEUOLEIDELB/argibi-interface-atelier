@@ -1,6 +1,7 @@
 // A4-bd-lore.js — BD animee, 4 slides. Slides 1-3 = 2 panneaux paired,
 // slide 4 = panneau solo + CTA ON SAUVE TUKO. Barre progression 4 segments.
 // Caption stylisee en bas. Cap min 1.5s avant skip.
+// Cf. doc interne.
 //
 
 import { Container } from 'pixi.js';

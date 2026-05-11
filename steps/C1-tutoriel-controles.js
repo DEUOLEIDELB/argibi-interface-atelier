@@ -1,4 +1,5 @@
 // C1-tutoriel-controles.js — Tutoriel des deux indicateurs (cadenas / fleche).
+// Source : doc interne.
 // 2 slides. State : { slide: 1|2 } .
 
 import { Container } from 'pixi.js';

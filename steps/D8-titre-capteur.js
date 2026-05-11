@@ -1,6 +1,7 @@
 // D8-titre-capteur.js : Carte de chapitre "LE CAPTEUR" (page magazine 17).
+// Fiche : doc interne (template D0/D4).
 // Composants partages : `.titre-hero`, `.sous-titre` (via styles locaux),
-// `.cta-primary`, `.tuko-mascotte` (composant design system § Tuko mascotte).
+// `.cta-primary`, `.tuko-mascotte` .
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';

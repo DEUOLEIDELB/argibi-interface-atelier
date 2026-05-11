@@ -1,5 +1,6 @@
 // D2-mini-jeu-reconnais-le-signal.js : "DOUBLE-VUE", 3 manches qui devoilent
 // la connexion entre graph (D1) et timeline 0/1 (binaire).
+// Fiche : doc interne
 // utilise .barre-progression + .compteur-geant + .tuko-mascotte
 // partages  + helpers spawnConfettis/spawnShockwave (effects.js).
 

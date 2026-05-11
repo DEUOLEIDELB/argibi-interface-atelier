@@ -1,4 +1,5 @@
 // D1-activite-bouton.js : "LE BOUTON A 3 LANGUES" (page magazine 14).
+// Fiche : doc interne
 // utilise .scenario-card + .scenario-card-grid--1x3 partages .
 //        Override local du grid-template-rows interne pour titre + demo + graph + label.
 

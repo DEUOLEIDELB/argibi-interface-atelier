@@ -5,6 +5,7 @@
 // texte adapte pour le contraste (paper sur violet/rose, ink sur cyan/jaune).
 // CTA non anime, sans chevron. Sas de bascule (3.2.1.flash) au clic CTA.
 // Bandeaux shell visibles (pas fullscreen).
+// Cf. doc interne.
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';

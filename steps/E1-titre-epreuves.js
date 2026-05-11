@@ -1,4 +1,5 @@
 // E1-titre-epreuves.js — Carte de chapitre LES EPREUVES.
+// Pattern carte de chapitre identique a D0/D4/D8 .
 // Specifique E1 : bandeau-pulsant alerte "SYSTEME CORROMPU" + couche Kurnel
 // persistante (scan-lines en arriere-plan) + micro-glitch idle sur le titre.
 //
