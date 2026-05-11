@@ -12,7 +12,8 @@ export function configureGrist(config) {
 
 export async function fetchSchool(schoolId) {
   if (!schoolId) return cached(schoolId) || null;
-  // Court-circuit si Grist desactive dans config.json (cas par defaut).
+  // Court-circuit si Grist desactive dans config.json (cas par defaut tant
+  // que les credentials ne sont pas fournis).
   if (!CONFIG?.enabled) return cached(schoolId);
   if (!CONFIG?.apiKey || !CONFIG?.docId) return cached(schoolId);
 

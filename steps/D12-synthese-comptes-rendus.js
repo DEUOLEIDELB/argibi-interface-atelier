@@ -344,8 +344,7 @@ function buildLivedStats() {
     lines.push(`${d2Score}/3 signaux reconnus`);
   }
 
-  // D6 raffinee : score (cadenas ouverts) cf. fiche D6 persistance.
-  // Le schema precedent marquait D6 TBD a la date de migration : lecture defensive.
+  // D6 : score (cadenas ouverts). Lecture defensive.
   const d6Score = state.steps?.D6?.score;
   if (typeof d6Score === 'number') {
     lines.push(`${d6Score}/3 cadenas ouverts`);

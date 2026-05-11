@@ -1,5 +1,6 @@
-// _template.js — Squelette du contrat de step. Dupliquer ce fichier
-// en /steps/<id>-<slug>.js puis remplir enter()/exit().
+// _template.js — Squelette du contrat de step. Les  dupliquent
+// ce fichier en /steps/<id>-<slug>.js puis remplissent enter()/exit().
+// Source : doc interne §7 + doc interne §6.1.
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';
@@ -23,11 +24,12 @@ export default {
   async enter(container, savedState, navAPI) {
     // 1. Scène Pixi VIDE — pattern de demonstration uniquement.
     //    En vraie page : populer `scene` (sprites, particles, drag&drop, etc.)
+    //    Cf. doc interne §6 et §8.
     scene = new Container();
     container.addChild(scene);
 
     // 2. DOM principal — createElement + textContent (jamais innerHTML
-    //    avec contenu dynamique).
+    //    avec contenu dynamique cf. doc interne).
     const stage = document.querySelector('#stage');
 
     const wrap = document.createElement('div');
@@ -47,7 +49,7 @@ export default {
 
     const sous = document.createElement('p');
     sous.className = 'sous-titre';
-    sous.textContent = 'template prêt. clique pour navAPI.next()';
+    sous.textContent = 'template pret. clique pour navAPI.next()';
     wrap.appendChild(sous);
 
     stage.appendChild(wrap);

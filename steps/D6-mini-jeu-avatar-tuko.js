@@ -894,12 +894,6 @@ function buildDom(navAPI) {
 
   wrap.appendChild(bottom);
 
-  // Watermark
-  const wm = document.createElement('div');
-  wm.className = 'step-D6__watermark';
-  wm.textContent = 'wubo · argibi';
-  wrap.appendChild(wm);
-
   // CTA
   const onCtaClick = () => {
     if (ctaEl.classList.contains('is-shown')) navAPI.next();

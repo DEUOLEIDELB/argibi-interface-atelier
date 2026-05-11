@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    components.css — Bibliothèque de composants partagés (typo, CTA, chips,
    inputs, cards, compteurs, barres de progression, bandeaux).
    ========================================================================== */
@@ -470,8 +470,8 @@
 }
 
 /* ----- 2. Tuko mascotte placeholder (convention sprite-pending) ----------- *
- * Tant que les sprites définitifs ne sont pas livrés, on utilise cette
- * convention placeholder commune.
+ * Tant que les sprites de Taki ne sont pas livres, tous les
+ * utilisent cette convention placeholder commune (cf. § 11 du analyse initiale).
  *
  * Usage :
  *   <div class="tuko-mascotte" data-pose="pedagogique" data-position="bas-gauche"></div>
@@ -678,7 +678,7 @@
 
 /* ----- 6. Scenario card (composant 6.1) ----------------------------------- *
  * Source canonique : D3 (4 scenarios grille 2x2 + 3 mini-options).
- * Réutilisé par D7 et D11 (3 instances identiques).
+ * Reutilise par D7 et D11 .
  *
  * Usage :
  *   <div class="scenario-card">

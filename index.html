@@ -42,6 +42,7 @@
 
 <!-- =========================================================================
      SHELL — bandeau top + zone de contenu + bandeau bottom + watermark
+     Source : design system §9 et doc interne §2.3.
      ========================================================================= -->
 <div id="shell" x-data="shellState" @argibi:nav-changed.window="onNavChanged($event)">
 
@@ -176,8 +177,9 @@
   window.PHASE_OF = PHASE_OF;
 
   // Charge config.json (non bloquant) et configure Grist. Tant que
-  // grist.enabled = false dans config.json, aucun appel reseau ne sera fait,
-  // fetchSchool() retournera direct le cache localStorage.
+  // grist.enabled = false dans config.json , aucun
+  // appel reseau ne sera fait, fetchSchool() retournera direct le
+  // cache localStorage.
   async function loadConfig() {
     try {
       const res = await fetch('config.json', { cache: 'no-store' });

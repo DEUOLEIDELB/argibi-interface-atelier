@@ -1,4 +1,5 @@
-// step-order.js — Liste centralisée des étapes (ordre canonique de l'atelier).
+// step-order.js — Liste centralisée des steps (ordre canonique de l'atelier).
+// Modifiable seulement par  (les  n'y touchent pas).
 
 export const STEP_ORDER = [
   // Phase A — Embarquement
@@ -39,7 +40,8 @@ export const PHASE_INFO = {
   F: { id: 'F', label: 'Final',          count: PHASE_OF.F.length },
 };
 
-// Slug par défaut pour résoudre /steps/<id>-<slug>.js.
+// Slug par défaut pour résoudre /steps/<id>-<slug>.js. Les
+// renseignent cette table au fur et à mesure de l'implémentation des pages.
 export const STEP_SLUGS = {
   A0: 'chargement-tuko',
   A1: 'qui-est-la',

@@ -1,11 +1,12 @@
-// nav.js — API de navigation entre étapes.
+// nav.js — API de navigation. Source : doc interne §6.2.
 //
 // Le navAPI est passé à chaque step.enter(container, savedState, navAPI).
 // Il maintient currentStepId, history, unlockedSteps. Il charge dynamiquement
 // le module step par son ID (/steps/<id>-<slug>.js).
 //
-// Auto-discovery : on importe /steps/<id>-<slug>.js a la volee.
+// Auto-discovery  : on importe /steps/<id>-<slug>.js a la volee.
 // En cas d'echec (fichier absent), on log info et on reste sur le step courant.
+// Plus de manifest steps/index.json a maintenir cote .
 
 import { Container } from 'pixi.js';
 import { app } from './app.js';
@@ -112,7 +113,7 @@ async function loadStepModule(stepId) {
     return null;
   }
   // Auto-discovery : try-import direct. Si le fichier n'existe pas
-  // (step pas encore implémenté), on log info et retourne null.
+  // (step pas encore livre par son ), on log info et retourne null.
   try {
     const mod = await import(`../steps/${stepId}-${slug}.js`);
     stepCache[stepId] = mod.default;

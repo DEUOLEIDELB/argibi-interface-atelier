@@ -1,4 +1,4 @@
-﻿// effects.js — Helpers JS pour animations DOM riches : étincelles cyan,
+// effects.js — Helpers JS pour animations DOM riches : étincelles cyan,
 // confettis reward, shockwave, pluie de prénoms, fireworks.
 //
 // Contrat de chaque helper :

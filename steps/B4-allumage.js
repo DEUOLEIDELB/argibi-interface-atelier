@@ -11,8 +11,6 @@
 //           15s apres 30s. Etincelles cyan via spawnEtincelles partage.
 //           Tuko emerveille.
 //
-// La matrice .matrice-8x8 est un composant partage reutilise par 6 pages
-// (B4, C1, D5, E2, E4, F1).
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';

@@ -1,8 +1,8 @@
 // audio.js — Gestion sons + mute global. Pas d'autoplay.
-// Sons préchargés au boot.
+// Sons préchargés au boot (cf. design system §8).
 //
 // Liste des sons disponibles tenue dans `assets/sounds/index.json` (manifest
-// edite a la main des qu'un MP3 est livre dans le dossier).
+// edite a la main par le PM/ des qu'un MP3 est livre dans le dossier).
 // Tant que la liste est vide, preloadSounds() ne fait AUCUN appel reseau sur
 // les MP3, donc aucun 404. Format attendu :
 //
@@ -26,7 +26,7 @@ async function loadSoundsManifest() {
     const json = await res.json();
     return Array.isArray(json?.sounds) ? json.sounds : [];
   } catch {
-    // Pas d'index.json -> pas de sons. Comportement attendu.
+    // Pas d'index.json -> pas de sons. Comportement attendu en .
     return [];
   }
 }

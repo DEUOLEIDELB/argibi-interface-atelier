@@ -1,14 +1,14 @@
 // A0-chargement-tuko.js — Page de boot fullscreen.
-// Tuko (placeholder mascotte) centre + 5 chiffres binaires qui orbitent
-// + barre de progression qui se remplit en stop-motion. Duree minimum 5s.
-// Bascule auto vers A1 a la fin. Espace ignore avant 5s (skip silencieux).
+// Tuko (sprite tuko_hote) centre qui shake doucement + barre de progression
+// qui se remplit en stop-motion. Duree minimum 7s. Bascule auto vers A1.
+// Espace ignore avant 7s (skip silencieux).
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';
 import { saveStepState } from '../core/state.js';
 
-const MIN_DURATION_MS = 5000;
-const PROGRESS_TICK_MS = 250;
+const MIN_DURATION_MS = 7000;
+const PROGRESS_TICK_MS = 750;
 const PROGRESS_SEGMENTS = 8;
 const STYLE_ID = 'step-A0-style';
 
@@ -32,43 +32,34 @@ const CSS = `
   align-self: center;
 }
 
-.step-A0__orbit {
-  position: relative;
-  width: clamp(360px, 38vw, 560px);
-  height: clamp(360px, 38vw, 560px);
-  display: grid;
-  place-items: center;
-}
-
 .step-A0__tuko-wrap {
-  --tuko-mascotte-size: clamp(220px, 26vw, 340px);
+  --tuko-mascotte-size: clamp(280px, 32vw, 420px);
   position: relative;
-  z-index: 2;
 }
 
-.step-A0__digit {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  font-family: var(--display);
-  font-size: var(--t-h2);
-  font-weight: 900;
-  color: var(--accent-1);
-  user-select: none;
-  pointer-events: none;
-  text-shadow: 0 0 18px color-mix(in srgb, var(--accent-1) 40%, transparent);
-  transform: translate(-50%, -50%);
-  will-change: transform, opacity;
+/* Surcharge du placeholder .tuko-mascotte : sprite tuko_hote + shake doux. */
+.step-A0 .tuko-mascotte {
+  background: url('assets/sprites/tuko_hote.png') center / contain no-repeat;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  color: transparent;
+  animation: a0-tuko-shake 0.55s ease-in-out infinite;
+  will-change: transform;
 }
 
-.step-A0__digit.is-falling {
-  animation: a0-digit-fall 700ms var(--ease-bounce) forwards;
+.step-A0 .tuko-mascotte::before,
+.step-A0 .tuko-mascotte::after {
+  content: none;
+  display: none;
 }
 
-@keyframes a0-digit-fall {
-  0%   { transform: translate(-50%, -50%) scale(1) rotate(0); opacity: 1; }
-  60%  { transform: translate(-50%, calc(-50% - 8px)) scale(1.4) rotate(-12deg); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(0.9) rotate(0); opacity: 0.85; }
+@keyframes a0-tuko-shake {
+  0%, 100% { transform: translate(0, 0)         rotate(0); }
+  20%      { transform: translate(-1.5px, -1px) rotate(-1deg); }
+  40%      { transform: translate(1.5px, 1px)   rotate(1deg); }
+  60%      { transform: translate(-1px, 1px)    rotate(-0.6deg); }
+  80%      { transform: translate(1px, -1px)    rotate(0.6deg); }
 }
 
 .step-A0__bottom {
@@ -90,18 +81,6 @@ const CSS = `
   text-transform: lowercase;
   color: var(--ink);
   opacity: 0.55;
-}
-
-.step-A0__watermark {
-  position: absolute;
-  right: var(--s-4);
-  bottom: var(--s-3);
-  font-family: var(--mono);
-  font-size: var(--t-tiny);
-  color: var(--ink);
-  opacity: 0.5;
-  letter-spacing: 0.16em;
-  pointer-events: none;
 }
 
 .step-A0__final-flash {
@@ -150,7 +129,7 @@ export default {
   id: 'A0',
   phase: 'A',
   title: 'Chargement Tuko',
-  estimatedDuration: 5,
+  estimatedDuration: 7,
   isCollective: false,
   requiresAnimator: false,
   fullscreen: true,
@@ -168,12 +147,9 @@ export default {
     const wrap = document.createElement('div');
     wrap.className = 'step-A0';
 
-    // ----- Centre : orbit + Tuko + chiffres ---------------------------------
+    // ----- Centre : Tuko seul -----------------------------------------------
     const center = document.createElement('div');
     center.className = 'step-A0__center';
-
-    const orbit = document.createElement('div');
-    orbit.className = 'step-A0__orbit';
 
     const tukoWrap = document.createElement('div');
     tukoWrap.className = 'step-A0__tuko-wrap';
@@ -182,25 +158,8 @@ export default {
     tuko.setAttribute('data-pose', 'hote');
     tuko.setAttribute('data-position', 'inline');
     tukoWrap.appendChild(tuko);
-    orbit.appendChild(tukoWrap);
+    center.appendChild(tukoWrap);
 
-    // 5 chiffres binaires (3 fois "1", 2 fois "0").
-    const digitsConfig = [
-      { glyph: '1', phase: 0 },
-      { glyph: '0', phase: (Math.PI * 2) / 5 },
-      { glyph: '1', phase: (Math.PI * 4) / 5 },
-      { glyph: '0', phase: (Math.PI * 6) / 5 },
-      { glyph: '1', phase: (Math.PI * 8) / 5 },
-    ];
-    const digitNodes = digitsConfig.map((cfg) => {
-      const el = document.createElement('span');
-      el.className = 'step-A0__digit';
-      el.textContent = cfg.glyph;
-      orbit.appendChild(el);
-      return { el, basePhase: cfg.phase, lastFallAt: 0 };
-    });
-
-    center.appendChild(orbit);
     wrap.appendChild(center);
 
     // ----- Bas : barre progression + label ----------------------------------
@@ -227,12 +186,6 @@ export default {
 
     wrap.appendChild(bottom);
 
-    // ----- Watermark local (le shell est masqué en fullscreen) --------------
-    const watermark = document.createElement('div');
-    watermark.className = 'step-A0__watermark';
-    watermark.textContent = 'wubo · argibi';
-    wrap.appendChild(watermark);
-
     // ----- Flash de fin -----------------------------------------------------
     const flash = document.createElement('div');
     flash.className = 'step-A0__final-flash';
@@ -241,45 +194,10 @@ export default {
     stage.appendChild(wrap);
     domNodes.push(wrap);
 
-    // ----- Animation orbite (Pixi ticker) -----------------------------------
-    const orbitState = { t: 0 };
-    const orbitTick = (delta) => {
-      orbitState.t += delta * 0.012; // vitesse globale
-      const radiusX = orbit.clientWidth * 0.42;
-      const radiusY = orbit.clientHeight * 0.30;
-      digitNodes.forEach((d) => {
-        const angle = orbitState.t + d.basePhase;
-        const x = Math.cos(angle) * radiusX;
-        const y = Math.sin(angle) * radiusY;
-        // z-index visuel : devant Tuko quand y > 0 (en bas), derriere sinon.
-        d.el.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
-        d.el.style.zIndex = y > 0 ? '3' : '1';
-      });
-    };
-    // Premier appel pour positionner les chiffres sur l'orbite des le frame 0.
-    requestAnimationFrame(() => orbitTick(0));
-    app.ticker.add(orbitTick);
-    tickerFns.push(orbitTick);
-
-    // ----- Chute aleatoire d'un chiffre toutes les ~3s ---------------------
-    const scheduleFall = () => {
-      const t = setTimeout(() => {
-        if (!wrap.isConnected) return;
-        const target = digitNodes[Math.floor(Math.random() * digitNodes.length)];
-        target.el.classList.add('is-falling');
-        const t2 = setTimeout(() => target.el.classList.remove('is-falling'), 750);
-        timers.push(t2);
-        scheduleFall();
-      }, 2500 + Math.random() * 1500);
-      timers.push(t);
-    };
-    scheduleFall();
-
     // ----- Remplissage barre en stop-motion --------------------------------
     let segIdx = 0;
     const fillNext = () => {
       if (segIdx >= segs.length) return;
-      // tous les segs precedents en done
       for (let i = 0; i < segIdx; i++) segs[i].classList.replace('is-current', 'is-done');
       segs[segIdx].classList.add('is-current');
       segIdx++;
@@ -348,7 +266,6 @@ export default {
   },
 
   replay() {
-    // Pas de re-anim sans ecraser : la page se rejoue d'elle-meme via mountStep.
     return true;
   },
 };

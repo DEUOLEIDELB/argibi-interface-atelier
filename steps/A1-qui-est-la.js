@@ -1,6 +1,10 @@
 // A1-qui-est-la.js — Saisie des prenoms de la classe.
-// Input centre + nuage de chips + compteur haut-droite + CTA C'EST PARTI.
-// Sas de bascule (3 . 2 . 1 . flash) au clic CTA, puis nav.next() vers A2.
+// Layout vertical centre : tuko absolute top-left, titre, input, cloud
+// (zone papier grande pour 25+ chips) avec compteur a droite, CTA en bas.
+// Chaque chip prend une couleur aleatoire des 4 accents Wubo avec
+// texte adapte pour le contraste (paper sur violet/rose, ink sur cyan/jaune).
+// CTA non anime, sans chevron. Sas de bascule (3.2.1.flash) au clic CTA.
+// Bandeaux shell visibles (pas fullscreen).
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';
@@ -8,57 +12,167 @@ import { saveStepState, getStepState } from '../core/state.js';
 
 const STYLE_ID = 'step-A1-style';
 
+// Couleurs accent Wubo + texte contraste adapte (AA min).
+const CHIP_COLORS = [
+  { bg: 'var(--accent-1)', text: 'var(--paper)' }, // violet -> texte blanc
+  { bg: 'var(--accent-2)', text: 'var(--ink)'   }, // cyan   -> texte noir
+  { bg: 'var(--accent-3)', text: 'var(--ink)'   }, // jaune  -> texte noir
+  { bg: 'var(--accent-4)', text: 'var(--paper)' }, // rose   -> texte blanc
+];
+
 const STYLES = `
 .step-A1 {
   position: absolute; inset: 0;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  padding: var(--s-5);
-  gap: var(--s-3);
+  grid-template-rows: auto auto 1fr auto;
+  gap: var(--s-2);
+  padding: var(--s-8) var(--s-5); /* 128px top/bottom : grosse respiration cible Taki */
   background: var(--bg);
   overflow: hidden;
 }
 
-.step-A1__top {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: start;
-  gap: var(--s-4);
+/* ----- Tuko : pose sur le bord superieur gauche du cloud, derriere -------- */
+
+.step-A1__tuko {
+  position: absolute;
+  top: 7px;
+  left: var(--s-3);
+  --tuko-mascotte-size: clamp(140px, 13vw, 180px);
+  background: url('assets/sprites/tuko_spectate.png') center / contain no-repeat !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  animation: a1-tuko-bobbing 2.4s ease-in-out infinite !important;
+  z-index: 1; /* derriere le cloud (z-index 2) */
+  pointer-events: none;
 }
 
-.step-A1__input-wrap {
+.step-A1__tuko::before,
+.step-A1__tuko::after {
+  content: none !important;
+  display: none !important;
+}
+
+@keyframes a1-tuko-bobbing {
+  0%, 100% { transform: translateY(0)    rotate(-2deg); }
+  50%      { transform: translateY(-6px) rotate(2deg); }
+}
+
+/* ----- Title (centre) ----------------------------------------------------- */
+
+.step-A1__title {
+  font-family: var(--display);
+  font-size: clamp(44px, 4.2vw, 64px);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0;
+  text-align: center;
   justify-self: center;
-  width: min(540px, 60vw);
-  display: grid;
-  gap: var(--s-1);
+}
+
+/* ----- Input (centre) ----------------------------------------------------- */
+
+.step-A1__input-wrap {
+  width: min(640px, 60vw);
+  justify-self: center;
 }
 
 .step-A1__input {
   text-align: center;
+  font-size: clamp(22px, 1.9vw, 30px);
+  padding: 30px var(--s-3);
 }
 
-.step-A1__counter {
-  justify-self: end;
+/* ----- Cloud-area : cloud centre, tuko + compteur en absolute sur le frame */
+
+.step-A1__cloud-area {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  min-height: 0;
+  width: 100%;
+  height: 80%;
+}
+
+/* Frame autour du cloud : permet de poser tuko (gauche) et compteur (droite)
+   en absolute relatifs au cloud, soit en debord au-dessus, soit poses sur
+   le bord superieur du cloud. Le cloud (z-index 2) passe devant. */
+.step-A1__cloud-frame {
+  position: relative;
+  width: min(1700px, 100%);
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .step-A1__cloud {
   position: relative;
+  z-index: 2; /* devant le tuko (z-index 1) */
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  background: var(--paper);
+  border: var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s-2) var(--s-3);
+  gap: var(--s-2);
   justify-content: center;
-  align-content: flex-start;
-  padding: var(--s-4) var(--s-5);
-  overflow: hidden;
+  align-content: center;
+  padding: var(--s-3) var(--s-4);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
+
+.step-A1__cloud::-webkit-scrollbar { width: 8px; }
+.step-A1__cloud::-webkit-scrollbar-thumb { background: var(--ink); border-radius: 4px; opacity: 0.3; }
+
+.step-A1__cloud-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: var(--t-body);
+  color: var(--ink);
+  opacity: 0.35;
+  letter-spacing: 0.16em;
+  text-transform: lowercase;
+  pointer-events: none;
+  text-align: center;
+  padding: var(--s-3);
+}
+
+/* ----- Chips : couleur aleatoire parmi 4 accents Wubo --------------------- */
 
 .step-A1__chip {
   --rot: 0deg;
-  animation: a1-chip-pop 320ms var(--ease-bounce) backwards;
+  --float-delay: 0s;
+  font-size: clamp(20px, 1.6vw, 28px);
+  padding: 10px var(--s-3);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  /* background + color setes inline par renderChip() depuis CHIP_COLORS */
+  animation-name: a1-chip-pop, a1-chip-float;
+  animation-duration: 320ms, 3.6s;
+  animation-timing-function: var(--ease-bounce), ease-in-out;
+  animation-delay: 0s, calc(320ms + var(--float-delay));
+  animation-fill-mode: backwards, none;
+  animation-iteration-count: 1, infinite;
 }
 
 .step-A1__chip.is-removing {
-  animation: a1-chip-leave 220ms var(--ease-out) forwards;
+  animation-name: a1-chip-leave !important;
+  animation-duration: 220ms !important;
+  animation-timing-function: var(--ease-out) !important;
+  animation-delay: 0s !important;
+  animation-fill-mode: forwards !important;
+  animation-iteration-count: 1 !important;
 }
 
 @keyframes a1-chip-pop {
@@ -67,25 +181,58 @@ const STYLES = `
   100% { opacity: 1; transform: rotate(var(--rot)) scale(1); }
 }
 
+@keyframes a1-chip-float {
+  0%, 100% { transform: rotate(var(--rot))              translateY(0); }
+  50%      { transform: rotate(calc(var(--rot) + 2deg)) translateY(-5px); }
+}
+
 @keyframes a1-chip-leave {
   0%   { opacity: 1; transform: rotate(var(--rot)) scale(1); }
   100% { opacity: 0; transform: rotate(var(--rot)) scale(0.4); }
 }
 
-.step-A1__bottom {
-  display: grid;
-  justify-items: center;
-  gap: var(--s-2);
+/* ----- Compteur : pose sur le bord superieur droit du cloud (symetrique tuko) */
+
+.step-A1__counter {
+  position: absolute;
+  top: 7px;
+  right: var(--s-3);
+  z-index: 1; /* derriere le cloud, comme tuko */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
 }
 
-.step-A1__cta-hint {
-  font-family: var(--mono);
-  font-size: var(--t-tiny);
-  letter-spacing: 0.18em;
-  text-transform: lowercase;
+.step-A1 .compteur-geant__value {
+  font-size: clamp(48px, 4.4vw, 72px);
   color: var(--ink);
-  opacity: 0.55;
+  line-height: 1;
 }
+
+.step-A1 .compteur-geant__label {
+  font-size: var(--t-small);
+  color: var(--ink);
+  opacity: 0.65;
+  letter-spacing: 0.18em;
+}
+
+/* ----- CTA (centre, non anime) -------------------------------------------- */
+
+.step-A1__cta-area {
+  display: grid;
+  justify-items: center;
+  margin-top: var(--s-3); /* +24px d'air entre le cloud et le CTA */
+}
+
+.step-A1__cta {
+  animation: none !important;
+  font-size: clamp(28px, 2.4vw, 40px);
+  padding: 12px var(--s-5);
+}
+
+/* ----- Sas de bascule (countdown + flash) --------------------------------- */
 
 .step-A1__overlay {
   position: absolute; inset: 0;
@@ -94,7 +241,7 @@ const STYLES = `
   background: var(--ink);
   color: var(--paper);
   font-family: var(--display);
-  font-size: 240px;
+  font-size: clamp(180px, 22vw, 280px);
   font-weight: 900;
   z-index: 50;
   opacity: 0;
@@ -111,7 +258,7 @@ const STYLES = `
 }
 
 @keyframes a1-countdown {
-  0%   { transform: scale(0.4); opacity: 0; }
+  0%   { transform: scale(0.4);  opacity: 0; }
   60%  { transform: scale(1.15); opacity: 1; }
   100% { transform: scale(1);    opacity: 1; }
 }
@@ -157,7 +304,7 @@ function removeStyle() {
 }
 
 function persist() {
-  saveStepState('A1', { students: students.map(s => ({ name: s.name, addedAt: s.addedAt })) });
+  saveStepState('A1', { students: students.map(s => ({ name: s.name, addedAt: s.addedAt, colorIdx: s.colorIdx })) });
 }
 
 export default {
@@ -180,7 +327,11 @@ export default {
     const restored = (savedState?.students || getStepState('A1')?.students || []);
     if (Array.isArray(restored)) {
       students = restored
-        .map(s => ({ name: typeof s === 'string' ? s : s?.name, addedAt: s?.addedAt || Date.now() }))
+        .map(s => ({
+          name: typeof s === 'string' ? s : s?.name,
+          addedAt: s?.addedAt || Date.now(),
+          colorIdx: Number.isInteger(s?.colorIdx) ? s.colorIdx : Math.floor(Math.random() * CHIP_COLORS.length),
+        }))
         .filter(s => s.name && typeof s.name === 'string');
     }
 
@@ -188,23 +339,38 @@ export default {
     const wrap = document.createElement('div');
     wrap.className = 'step-A1';
 
-    // ----- Top : input + compteur ------------------------------------------
-    const top = document.createElement('div');
-    top.className = 'step-A1__top';
+    // ----- Title (centre) -------------------------------------------------
+    const title = document.createElement('h1');
+    title.className = 'step-A1__title';
+    title.textContent = 'QUI EST LÀ ?';
+    wrap.appendChild(title);
 
+    // ----- Input (centre) -------------------------------------------------
     const inputWrap = document.createElement('div');
     inputWrap.className = 'step-A1__input-wrap';
-
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'input-mega step-A1__input';
-    input.placeholder = 'tape un prenom + Entree';
+    input.placeholder = 'Prénom';
     input.maxLength = 24;
     input.autocomplete = 'off';
     input.spellcheck = false;
     inputWrap.appendChild(input);
+    wrap.appendChild(inputWrap);
 
-    top.appendChild(inputWrap);
+    // ----- Cloud-area : cloud-frame centre. Tuko (gauche) et compteur ----
+    // (droite) sont en absolute dans le frame, poses sur le bord du cloud.
+    const cloudArea = document.createElement('div');
+    cloudArea.className = 'step-A1__cloud-area';
+
+    const cloudFrame = document.createElement('div');
+    cloudFrame.className = 'step-A1__cloud-frame';
+
+    const tuko = document.createElement('div');
+    tuko.className = 'tuko-mascotte step-A1__tuko';
+    tuko.setAttribute('data-pose', 'spectateur');
+    tuko.setAttribute('data-position', 'inline');
+    cloudFrame.appendChild(tuko);
 
     const counter = document.createElement('div');
     counter.className = 'compteur-geant step-A1__counter';
@@ -216,51 +382,32 @@ export default {
     counterLabel.className = 'compteur-geant__label';
     counterLabel.textContent = 'eleves';
     counter.appendChild(counterLabel);
-    top.appendChild(counter);
+    cloudFrame.appendChild(counter);
 
-    wrap.appendChild(top);
-
-    // ----- Cloud -----------------------------------------------------------
     const cloud = document.createElement('div');
     cloud.className = 'step-A1__cloud';
-    wrap.appendChild(cloud);
 
-    // ----- Bottom : Tuko + CTA ---------------------------------------------
-    const bottom = document.createElement('div');
-    bottom.className = 'step-A1__bottom';
+    const cloudEmpty = document.createElement('div');
+    cloudEmpty.className = 'step-A1__cloud-empty';
+    cloudEmpty.textContent = '...';
+    cloud.appendChild(cloudEmpty);
 
+    cloudFrame.appendChild(cloud);
+    cloudArea.appendChild(cloudFrame);
+
+    wrap.appendChild(cloudArea);
+
+    // ----- CTA (centre, non anime) ----------------------------------------
+    const ctaArea = document.createElement('div');
+    ctaArea.className = 'step-A1__cta-area';
     const cta = document.createElement('button');
-    cta.className = 'cta-primary';
+    cta.className = 'cta-primary step-A1__cta';
     cta.type = 'button';
-    cta.textContent = '> C\'EST PARTI';
-    bottom.appendChild(cta);
+    cta.textContent = "C'EST PARTI";
+    ctaArea.appendChild(cta);
+    wrap.appendChild(ctaArea);
 
-    const ctaHint = document.createElement('div');
-    ctaHint.className = 'step-A1__cta-hint';
-    ctaHint.textContent = 'ajoute au moins un prenom';
-    bottom.appendChild(ctaHint);
-
-    wrap.appendChild(bottom);
-
-    const tuko = document.createElement('div');
-    tuko.className = 'tuko-mascotte';
-    tuko.setAttribute('data-pose', 'spectateur');
-    tuko.setAttribute('data-position', 'bas-gauche');
-    wrap.appendChild(tuko);
-
-    const watermark = document.createElement('div');
-    watermark.style.position = 'absolute';
-    watermark.style.right = 'var(--s-4)';
-    watermark.style.bottom = 'var(--s-3)';
-    watermark.style.fontFamily = 'var(--mono)';
-    watermark.style.fontSize = 'var(--t-tiny)';
-    watermark.style.opacity = '0.5';
-    watermark.style.letterSpacing = '0.16em';
-    watermark.style.pointerEvents = 'none';
-    watermark.textContent = 'wubo . argibi';
-    wrap.appendChild(watermark);
-
-    // ----- Overlay countdown + flash ---------------------------------------
+    // ----- Overlay countdown + flash --------------------------------------
     const overlay = document.createElement('div');
     overlay.className = 'step-A1__overlay';
     wrap.appendChild(overlay);
@@ -272,7 +419,7 @@ export default {
     stage.appendChild(wrap);
     domNodes.push(wrap);
 
-    // ----- Logique ---------------------------------------------------------
+    // ----- Logique --------------------------------------------------------
     function refreshCounter() {
       counterValue.textContent = String(students.length);
       counterValue.classList.add('is-pulsing');
@@ -280,18 +427,26 @@ export default {
       timers.push(t);
     }
 
+    function refreshCloudEmpty() {
+      cloudEmpty.style.display = students.length === 0 ? '' : 'none';
+    }
+
     function refreshCTA() {
       const ok = students.length > 0;
       cta.classList.toggle('is-disabled', !ok);
       cta.disabled = !ok;
-      ctaHint.style.visibility = ok ? 'hidden' : 'visible';
     }
 
     function renderChip(student) {
       const chip = document.createElement('span');
       chip.className = 'chip step-A1__chip';
       const rot = (Math.random() * 6 - 3).toFixed(2);
+      const floatDelay = (Math.random() * 2).toFixed(2);
+      const palette = CHIP_COLORS[student.colorIdx % CHIP_COLORS.length];
       chip.style.setProperty('--rot', `${rot}deg`);
+      chip.style.setProperty('--float-delay', `${floatDelay}s`);
+      chip.style.background = palette.bg;
+      chip.style.color = palette.text;
       chip.textContent = student.name;
       chip.dataset.name = student.name;
 
@@ -303,6 +458,7 @@ export default {
           students = students.filter(s => s !== student);
           persist();
           refreshCounter();
+          refreshCloudEmpty();
           refreshCTA();
         }, 220);
         timers.push(t);
@@ -315,17 +471,23 @@ export default {
 
     students.forEach(renderChip);
     refreshCounter();
+    refreshCloudEmpty();
     refreshCTA();
 
     function addStudent(rawName) {
       const name = (rawName || '').trim();
       if (!name) return;
       if (students.some(s => s.name.toLowerCase() === name.toLowerCase())) return;
-      const student = { name, addedAt: Date.now() };
+      const student = {
+        name,
+        addedAt: Date.now(),
+        colorIdx: Math.floor(Math.random() * CHIP_COLORS.length),
+      };
       students.push(student);
       renderChip(student);
       persist();
       refreshCounter();
+      refreshCloudEmpty();
       refreshCTA();
     }
 
@@ -338,6 +500,7 @@ export default {
         students.pop();
         persist();
         refreshCounter();
+        refreshCloudEmpty();
         refreshCTA();
       }
     }
@@ -420,7 +583,7 @@ export default {
   },
 
   serialize() {
-    return { students: students.map(s => ({ name: s.name, addedAt: s.addedAt })) };
+    return { students: students.map(s => ({ name: s.name, addedAt: s.addedAt, colorIdx: s.colorIdx })) };
   },
 
   isComplete() {

@@ -1,5 +1,6 @@
 /* ==========================================================================
    tokens.css — Design tokens (palette tinta, typo, espacement, motion).
+   Source : design system + design system.
    ========================================================================== */
 
 :root {
@@ -80,8 +81,11 @@
   /* ----- 6. Layout figé ----- */
   --shell-top-h:    80px;
   --shell-bottom-h: 80px;
-  --stage-w:        1760px;
-  --stage-h:        880px;
+  /* Stage : prend toute la place dispo entre les bandeaux. Les contraintes
+     reelles dans base.css (min(--stage-w, 100vw - 64) etc.) bornent au
+     viewport. Resultat : ~97% largeur, ~85% hauteur sur 1920x1080 F11. */
+  --stage-w:        100vw;
+  --stage-h:        100vh;
 
   /* ----- 7. Curseurs Tuko ----- */
   --cursor-default:     url('../assets/cursors/default.png') 8 4, auto;

@@ -12,10 +12,10 @@
 // E1 § "scan-lines fines visibles en arriere-plan en idle, comme si la
 // corruption n'etait pas encore completement eradiquee").
 //
-// Couleur Kurnel : #3F1A5C violet sombre, opposé au rose Tuko (--accent-4).
-// Pas de var(--*) car ce n'est pas dans tokens.css et la règle "aucune
-// couleur hardcodée" vise les fichiers de step ; ici c'est un asset partagé
-// de phase, pas un step.
+// Couleur Kurnel : #3F1A5C violet sombre (, oppose au
+// rose Tuko --accent-4). Pas de var(--*) car ce n'est pas dans tokens.css
+// et la regle "aucune couleur hardcodee" vise les fichiers de step ; ici
+// c'est un asset partage de phase, pas un step. Documente.
 
 const STYLE_ID = 'argibi-kurnel-overlay-style';
 const NODE_ID = 'argibi-kurnel-overlay';
