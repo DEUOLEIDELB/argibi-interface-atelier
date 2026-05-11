@@ -1,0 +1,11 @@
+{
+  "bundles": [
+    { "name": "common",  "assets": [] },
+    { "name": "phase-A", "assets": [] },
+    { "name": "phase-B", "assets": [] },
+    { "name": "phase-C", "assets": [] },
+    { "name": "phase-D", "assets": [] },
+    { "name": "phase-E", "assets": [] },
+    { "name": "phase-F", "assets": [] }
+  ]
+}

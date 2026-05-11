@@ -1,0 +1,93 @@
+/* ==========================================================================
+   tokens.css — Design tokens (palette tinta, typo, espacement, motion).
+   ========================================================================== */
+
+:root {
+  /* ----- 1. Palette tinta ----- */
+  /* Fonds */
+  --bg:        #FAF5F2;
+  --bg-2:      #F1E9E2;
+  --paper:     #FFFFFF;
+  --ink:       #191919;
+
+  /* Accents brand */
+  --accent-1:  #5914D0; /* violet — CTA primaire, action positive */
+  --accent-2:  #1DC1F9; /* bleu — info, validation, capteur */
+  --accent-3:  #FFDD0B; /* jaune — highlight, succès, indices */
+  --accent-4:  #D40272; /* rose — Tuko, énergie, attention */
+
+  /* Sémantique (instances des accents) */
+  --success:   var(--accent-3);
+  --error:     var(--accent-4);
+  --info:      var(--accent-2);
+  --highlight: var(--accent-1);
+
+  /* ----- 2. Typographie ----- */
+  --display: 'Archivo Black', 'Helvetica Neue', sans-serif;
+  --body:    'Archivo', system-ui, sans-serif;
+  --mono:    'JetBrains Mono', ui-monospace, monospace;
+
+  /* Échelle (cible 1920x1080, lisible à 5m) */
+  --t-hero:    clamp(80px, 9vw, 120px);
+  --t-h1:      clamp(48px, 5vw, 72px);
+  --t-h2:      clamp(36px, 4vw, 56px);
+  --t-body-xl: clamp(28px, 2.6vw, 36px);
+  --t-body:    clamp(20px, 1.8vw, 26px);
+  --t-small:   clamp(16px, 1.3vw, 20px);
+  --t-tiny:    14px; /* RÉSERVÉ aux contrôles animateur */
+
+  /* ----- 3. Espacement (échelle 8) ----- */
+  --s-1: 8px;
+  --s-2: 16px;
+  --s-3: 24px;
+  --s-4: 32px;
+  --s-5: 48px;
+  --s-6: 64px;
+  --s-7: 96px;
+  --s-8: 128px;
+
+  /* ----- 4. Bordures, ombres, radius ----- */
+  --border:      3px solid var(--ink);
+  --border-thin: 2px solid var(--ink);
+
+  --shadow-sm:  3px 3px 0 var(--ink);
+  --shadow:     6px 6px 0 var(--ink);
+  --shadow-lg:  10px 10px 0 var(--ink);
+  --shadow-xl:  14px 14px 0 var(--ink);
+
+  --shadow-accent-1: 6px 6px 0 var(--accent-1);
+  --shadow-accent-2: 6px 6px 0 var(--accent-2);
+  --shadow-accent-3: 6px 6px 0 var(--accent-3);
+  --shadow-accent-4: 6px 6px 0 var(--accent-4);
+
+  --r-sm:   4px;
+  --r-md:   8px;
+  --r-lg:   16px;
+  --r-pill: 9999px;
+
+  /* ----- 5. Motion ----- */
+  --d-instant: 100ms;
+  --d-fast:    200ms;
+  --d-normal:  350ms;
+  --d-slow:    600ms;
+  --d-hero:    1200ms;
+
+  --ease-out:    cubic-bezier(.16, 1, .3, 1);
+  --ease-in:     cubic-bezier(.7, 0, .84, 0);
+  --ease-bounce: cubic-bezier(.34, 1.56, .64, 1);
+  --ease-snap:   cubic-bezier(.5, 1.5, .5, 1);
+
+  /* ----- 6. Layout figé ----- */
+  --shell-top-h:    80px;
+  --shell-bottom-h: 80px;
+  --stage-w:        1760px;
+  --stage-h:        880px;
+
+  /* ----- 7. Curseurs Tuko ----- */
+  --cursor-default:     url('../assets/cursors/default.png') 8 4, auto;
+  --cursor-pointer:     url('../assets/cursors/pointer.png') 16 4, pointer;
+  --cursor-grab:        url('../assets/cursors/grab.png') 32 32, grab;
+  --cursor-grabbing:    url('../assets/cursors/grabbing.png') 32 32, grabbing;
+  --cursor-not-allowed: url('../assets/cursors/not-allowed.png') 32 32, not-allowed;
+  --cursor-text:        url('../assets/cursors/text.png') 16 32, text;
+}

@@ -1,0 +1,1051 @@
+﻿/* ==========================================================================
+   components.css — Bibliothèque de composants partagés (typo, CTA, chips,
+   inputs, cards, compteurs, barres de progression, bandeaux).
+   ========================================================================== */
+
+/* ----- Typo / structure ---------------------------------------------------- */
+
+.titre-hero {
+  font-family: var(--display);
+  font-size: var(--t-hero);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0;
+}
+
+.sous-titre {
+  font-family: var(--display);
+  font-size: var(--t-h2);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: var(--s-2) 0 0;
+  text-transform: lowercase;
+}
+
+.caption-bd {
+  display: inline-block;
+  font-family: var(--display);
+  font-size: var(--t-body-xl);
+  font-weight: 700;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: var(--t-tiny);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-3);
+  background: var(--ink);
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  display: inline-block;
+}
+
+/* ----- CTA primaire (le gros bouton) -------------------------------------- */
+
+.cta-primary {
+  font-family: var(--display);
+  font-size: var(--t-h2);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: var(--accent-1);
+  color: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow-lg);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-md);
+  cursor: var(--cursor-pointer);
+  transition: transform var(--d-fast) var(--ease-out),
+              box-shadow var(--d-fast) var(--ease-out);
+  animation: cta-idle-pulse 2s var(--ease-out) infinite;
+}
+
+.cta-primary:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: 14px 14px 0 var(--ink);
+}
+
+.cta-primary.is-disabled,
+.cta-primary[disabled] {
+  opacity: 0.5;
+  cursor: var(--cursor-not-allowed);
+  animation: none;
+}
+
+.cta-primary.is-disabled:hover,
+.cta-primary[disabled]:hover {
+  transform: none;
+  box-shadow: var(--shadow-lg);
+}
+
+@keyframes cta-idle-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.02); }
+}
+
+/* ----- CTA secondaire ------------------------------------------------------ */
+
+.cta-secondary {
+  font-family: var(--display);
+  font-size: var(--t-body-xl);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  cursor: var(--cursor-pointer);
+  transition: transform var(--d-fast) var(--ease-out),
+              box-shadow var(--d-fast) var(--ease-out);
+}
+
+.cta-secondary:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ----- Chip (prénom, libre) ----------------------------------------------- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-family: var(--display);
+  font-size: var(--t-body-xl);
+  font-weight: 700;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: 10px var(--s-2);
+  border-radius: var(--r-sm);
+  transform: rotate(var(--rot, 0deg));
+  transition: transform var(--d-fast) var(--ease-out),
+              box-shadow var(--d-fast) var(--ease-out);
+  cursor: var(--cursor-pointer);
+}
+
+.chip:hover {
+  transform: rotate(0deg) translate(-3px, -3px);
+  box-shadow: var(--shadow);
+}
+
+/* ----- Input mega ---------------------------------------------------------- */
+
+.input-mega {
+  font-family: var(--body);
+  font-size: var(--t-h2);
+  font-weight: 600;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  width: 100%;
+  outline: none;
+  transition: box-shadow var(--d-fast) var(--ease-out),
+              border-color var(--d-fast) var(--ease-out);
+}
+
+.input-mega::placeholder {
+  font-family: var(--mono);
+  opacity: 0.5;
+}
+
+.input-mega:focus {
+  border-color: var(--accent-1);
+  box-shadow: var(--shadow-accent-1);
+}
+
+/* ----- Cellule de saisie de chiffre --------------------------------------- */
+
+.cell-digit {
+  display: inline-grid;
+  place-items: center;
+  width: 96px;
+  height: 120px;
+  font-family: var(--display);
+  font-size: var(--t-hero);
+  font-weight: 900;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--r-md);
+  transition: transform var(--d-fast) var(--ease-bounce),
+              border-color var(--d-fast) var(--ease-out),
+              background var(--d-fast) var(--ease-out);
+}
+
+.cell-digit.is-focus {
+  border-color: var(--accent-1);
+  transform: scale(1.05);
+}
+
+.cell-digit.is-filled { background: var(--accent-3); }
+
+/* ----- Card cliquable ------------------------------------------------------ */
+
+.card-clickable {
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  cursor: var(--cursor-pointer);
+  transition: transform var(--d-fast) var(--ease-out),
+              box-shadow var(--d-fast) var(--ease-out);
+}
+
+.card-clickable:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.card-clickable.is-active {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-accent-1);
+}
+
+/* ----- Compteur géant ------------------------------------------------------ */
+
+.compteur-geant {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--display);
+}
+
+.compteur-geant__value {
+  font-size: 80px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--ink);
+  transition: transform var(--d-fast) var(--ease-bounce);
+}
+
+.compteur-geant__value.is-pulsing { transform: scale(1.15); }
+
+.compteur-geant__label {
+  font-family: var(--mono);
+  font-size: var(--t-small);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-top: var(--s-1);
+}
+
+/* ----- Barre de progression ------------------------------------------------ */
+
+.barre-progression {
+  display: flex;
+  gap: var(--s-1);
+  align-items: center;
+  width: 100%;
+}
+
+.barre-progression__seg {
+  flex: 1;
+  height: 16px;
+  background: var(--paper);
+  border: var(--border-thin);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  position: relative;
+}
+
+.barre-progression__seg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent-1);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--d-slow) var(--ease-out);
+}
+
+.barre-progression__seg.is-done::after    { transform: scaleX(1); background: var(--ink); }
+.barre-progression__seg.is-current::after { transform: scaleX(1); animation: seg-pulse 1.6s ease-in-out infinite; }
+
+@keyframes seg-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.7; }
+}
+
+/* ----- Bandeau pulsant ----------------------------------------------------- */
+
+.bandeau-pulsant {
+  width: 100%;
+  background: var(--accent-3);
+  color: var(--ink);
+  border-top: var(--border);
+  border-bottom: var(--border);
+  padding: var(--s-2) var(--s-4);
+  font-family: var(--display);
+  font-size: var(--t-h2);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+  animation: bandeau-pulse 1.4s ease-in-out infinite;
+}
+
+.bandeau-pulsant--alerte { background: var(--accent-4); color: var(--paper); }
+.bandeau-pulsant--ok     { background: var(--accent-3); color: var(--ink); }
+
+@keyframes bandeau-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.01); }
+}
+
+/* ----- Placeholder image (fallback assets manquants) ---------------------- */
+
+.placeholder-image {
+  background: var(--bg-2);
+  border: 2px dashed var(--ink);
+  padding: var(--s-4);
+  font-family: var(--mono);
+  font-size: var(--t-small);
+  color: var(--ink);
+  opacity: 0.6;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  min-height: 200px;
+  border-radius: var(--r-md);
+}
+
+/* ==========================================================================
+   COMPOSANTS PARTAGES
+   Helpers JS animés associés : core/effects.js.
+   ========================================================================== */
+
+/* ----- 1. Matrice virtuelle 8x8 (composant 5.1) --------------------------- *
+ * Sources extraites : B4 (allumage spirale), D5 (4 mini-matrices statiques),
+ * E2 (illu), E4 (cliquable + puzzles), F1 (final).
+ *
+ * Usage :
+ *   <div class="matrice-8x8"> ... 64 <div class="matrice-8x8__pixel"> ... </div>
+ *
+ * Modificateurs taille (sur le conteneur) :
+ *   .matrice-8x8--mini  ~ 200px   (D5 mini-cards)
+ *   .matrice-8x8        ~ 440px   (defaut, ~40vh, B4/C1/F1)
+ *   .matrice-8x8--large ~ 560px   (E4 puzzles cliquables)
+ *
+ * Variantes pixel :
+ *   .is-on              -> allume, palette accent-3 par defaut (jaune succes)
+ *   .is-on-cyan         -> --accent-2
+ *   .is-on-jaune        -> --accent-3 (alias explicite)
+ *   .is-on-rose         -> --accent-4
+ *   .is-on-violet       -> --accent-1
+ *   .is-pattern         -> allume + glow soutenu (patterns signatures)
+ *   .is-shaking         -> secousse 0.3s (reponse fausse)
+ *   .is-blinking        -> clignote 0.6s x2 (pixel manquant)
+ *   .is-hint            -> indice doux (cyan estompe)
+ *   .is-wrong           -> rouge-rose flash (E4 puzzle mismatch)
+ *   .just-lit           -> glow boost au tick d'allumage
+ *
+ * Variantes matrice :
+ *   .is-cliquable       -> cursor pointer + hover scale sur les pixels
+ *   .is-respirante      -> idle breathing (B4 slide 2 stable)
+ * --------------------------------------------------------------------------- */
+
+.matrice-8x8 {
+  --matrice-8x8-size: min(440px, 40vh);
+  --matrice-8x8-gap: 6px;
+  --matrice-8x8-padding: 14px;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  gap: var(--matrice-8x8-gap);
+  width: var(--matrice-8x8-size);
+  height: var(--matrice-8x8-size);
+  padding: var(--matrice-8x8-padding);
+  background: var(--ink);
+  border: var(--border);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--r-md);
+}
+
+.matrice-8x8--mini {
+  --matrice-8x8-size: min(200px, 22vh);
+  --matrice-8x8-gap: 3px;
+  --matrice-8x8-padding: 8px;
+}
+
+.matrice-8x8--large {
+  --matrice-8x8-size: min(560px, 56vh);
+  --matrice-8x8-gap: 4px;
+  --matrice-8x8-padding: 12px;
+}
+
+.matrice-8x8__pixel {
+  background: var(--bg-2);
+  border-radius: var(--r-sm);
+  transition: background var(--d-fast) var(--ease-out),
+              box-shadow var(--d-fast) var(--ease-out),
+              transform var(--d-instant) var(--ease-out);
+}
+
+.matrice-8x8__pixel.is-on {
+  background: var(--accent-3);
+  box-shadow: 0 0 12px var(--accent-3);
+}
+
+.matrice-8x8__pixel.is-on-cyan   { background: var(--accent-2); box-shadow: 0 0 12px var(--accent-2); }
+.matrice-8x8__pixel.is-on-jaune  { background: var(--accent-3); box-shadow: 0 0 12px var(--accent-3); }
+.matrice-8x8__pixel.is-on-rose   { background: var(--accent-4); box-shadow: 0 0 12px var(--accent-4); }
+.matrice-8x8__pixel.is-on-violet { background: var(--accent-1); box-shadow: 0 0 12px var(--accent-1); }
+
+.matrice-8x8__pixel.is-pattern {
+  background: var(--accent-3);
+  box-shadow: 0 0 14px var(--accent-3), 0 0 2px var(--accent-3) inset;
+}
+
+.matrice-8x8__pixel.is-hint {
+  background: color-mix(in srgb, var(--accent-2) 35%, var(--bg-2));
+}
+
+.matrice-8x8__pixel.is-wrong {
+  background: var(--accent-4);
+  animation: matrice-8x8-shake 0.3s ease-in-out;
+}
+
+.matrice-8x8__pixel.is-shaking {
+  animation: matrice-8x8-shake 0.3s ease-in-out;
+}
+
+.matrice-8x8__pixel.is-blinking {
+  animation: matrice-8x8-blink 0.6s ease-in-out 2;
+}
+
+.matrice-8x8__pixel.just-lit {
+  box-shadow: 0 0 18px var(--accent-3);
+}
+
+.matrice-8x8.is-cliquable .matrice-8x8__pixel {
+  cursor: var(--cursor-pointer);
+  border: 2px solid color-mix(in srgb, var(--paper) 25%, transparent);
+}
+
+.matrice-8x8.is-cliquable .matrice-8x8__pixel:hover {
+  transform: scale(1.05);
+}
+
+.matrice-8x8.is-respirante .matrice-8x8__pixel.is-on,
+.matrice-8x8.is-respirante .matrice-8x8__pixel.is-pattern {
+  animation: matrice-8x8-breath 3s ease-in-out infinite;
+}
+
+@keyframes matrice-8x8-shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-3px); }
+  75%      { transform: translateX(3px); }
+}
+
+@keyframes matrice-8x8-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.2; }
+}
+
+@keyframes matrice-8x8-breath {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.78; }
+}
+
+/* ----- 2. Tuko mascotte placeholder (convention sprite-pending) ----------- *
+ * Tant que les sprites définitifs ne sont pas livrés, on utilise cette
+ * convention placeholder commune.
+ *
+ * Usage :
+ *   <div class="tuko-mascotte" data-pose="pedagogique" data-position="bas-gauche"></div>
+ *
+ * data-pose (rose accent-4 par defaut, label visible) :
+ *   stop          - avertissement, patience (A3, A4 slide 2)
+ *   pedagogique   - consignes, doigt leve (toutes pages consigne)
+ *   presentateur  - questions ouvertes (B1, B3)
+ *   hote          - accueil (A0, A1)
+ *   spectateur    - idle ambiance bas-gauche (calmes)
+ *   triomphe      - reveal, victoires (B4 fin, F1)
+ *   mysterieux    - enigmes (A2 devinettes)
+ *   scientifique  - laboratoire (D9, D10)
+ *   transporteur  - mini-Tuko qui anime un deplacement (E3 migration digits)
+ *   emerveille    - matrice qui s'allume (B4 phase stable)
+ *
+ * data-position :
+ *   bas-gauche    - defaut conventionnel
+ *   bas-droite    - hors compteur geant
+ *   centre        - mode hero (F1 temps 3)
+ *   inline        - dans le flux DOM, pas de positionnement absolu
+ * --------------------------------------------------------------------------- */
+
+.tuko-mascotte {
+  --tuko-mascotte-size: 160px;
+  width: var(--tuko-mascotte-size);
+  height: var(--tuko-mascotte-size);
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  border-radius: var(--r-md);
+  font-family: var(--mono);
+  font-size: var(--t-tiny);
+  letter-spacing: 0.18em;
+  text-align: center;
+  color: var(--accent-4);
+  text-transform: uppercase;
+  z-index: 3;
+  animation: tuko-mascotte-bobbing 1.6s ease-in-out infinite;
+}
+
+.tuko-mascotte::before {
+  content: attr(data-pose);
+  display: block;
+}
+
+.tuko-mascotte::after {
+  content: 'tuko';
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  opacity: 0.55;
+  letter-spacing: 0.32em;
+}
+
+.tuko-mascotte[data-position="bas-gauche"] {
+  position: absolute;
+  left: var(--s-5);
+  bottom: var(--s-5);
+}
+
+.tuko-mascotte[data-position="bas-droite"] {
+  position: absolute;
+  right: var(--s-5);
+  bottom: var(--s-5);
+}
+
+.tuko-mascotte[data-position="centre"] {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  --tuko-mascotte-size: 220px;
+  font-size: var(--t-body);
+}
+
+.tuko-mascotte[data-position="inline"] {
+  position: relative;
+}
+
+.tuko-mascotte[data-pose="stop"]         { animation: tuko-mascotte-stop 2s ease-in-out infinite; }
+.tuko-mascotte[data-pose="presentateur"] { animation: tuko-mascotte-bobbing 1.4s ease-in-out infinite; }
+.tuko-mascotte[data-pose="triomphe"]     { animation: tuko-mascotte-triomphe 350ms var(--ease-bounce) forwards,
+                                                     tuko-mascotte-bobbing 1.6s ease-in-out 350ms infinite; }
+.tuko-mascotte[data-pose="emerveille"]   { animation: tuko-mascotte-emerveille 1.4s ease-in-out infinite; }
+.tuko-mascotte[data-pose="mysterieux"]   { animation: tuko-mascotte-bobbing 2.6s ease-in-out infinite; opacity: 0.85; }
+.tuko-mascotte[data-pose="transporteur"] { --tuko-mascotte-size: 96px; font-size: 10px; }
+
+@keyframes tuko-mascotte-bobbing {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+.tuko-mascotte[data-position="centre"] {
+  animation-name: tuko-mascotte-bobbing-centre;
+}
+@keyframes tuko-mascotte-bobbing-centre {
+  0%, 100% { transform: translate(-50%, -50%); }
+  50%      { transform: translate(-50%, calc(-50% - 4px)); }
+}
+
+@keyframes tuko-mascotte-stop {
+  0%, 100% { transform: translateY(0)    rotate(0deg); }
+  50%      { transform: translateY(-2px) rotate(-1.5deg); }
+}
+
+@keyframes tuko-mascotte-triomphe {
+  0%   { transform: translateY(0)    rotate(0deg) scale(1); }
+  60%  { transform: translateY(-12px) rotate(4deg) scale(1.1); }
+  100% { transform: translateY(0)    rotate(0deg) scale(1); }
+}
+
+@keyframes tuko-mascotte-emerveille {
+  0%, 100% { transform: translateY(0)    scale(1); }
+  50%      { transform: translateY(-6px) scale(1.06); }
+}
+
+/* ----- 5. Cadenas (composant 5.5) ----------------------------------------- *
+ * Sources extraites : A4 (6 cadenas en cascade fermeture), C1 (cadenas rose
+ * indice), F1 (6 cadenas en cascade ouverture).
+ *
+ * Usage :
+ *   <div class="cadenas cadenas--ferme">...</div>
+ *   <div class="cadenas cadenas--ouvert">...</div>
+ *
+ * Variantes :
+ *   .cadenas--ferme       (defaut) - rose plein
+ *   .cadenas--ouvert      vert/jaune deverrouille
+ *   .is-locking           anime fermeture (clack 350ms)
+ *   .is-unlocking         anime ouverture (cascade rebond)
+ *   .is-pulsing           pulse en idle (attente d'unlock)
+ *
+ * Variable :
+ *   --cadenas-size        taille (defaut 96px)
+ *   --cadenas-delay       delai d'animation (pour cascade)
+ * --------------------------------------------------------------------------- */
+
+.cadenas {
+  --cadenas-size: 96px;
+  --cadenas-delay: 0ms;
+  width: var(--cadenas-size);
+  height: var(--cadenas-size);
+  display: grid;
+  place-items: center;
+  background: var(--accent-4);
+  color: var(--paper);
+  border: var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow);
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: calc(var(--cadenas-size) * 0.55);
+  line-height: 1;
+}
+
+.cadenas::before {
+  content: '🔒';
+}
+
+.cadenas--ouvert {
+  background: var(--accent-3);
+  color: var(--ink);
+}
+
+.cadenas--ouvert::before {
+  content: '🔓';
+}
+
+.cadenas.is-locking {
+  transform: scale(0);
+  opacity: 0;
+  animation: cadenas-clack 350ms var(--ease-bounce) forwards;
+  animation-delay: var(--cadenas-delay);
+}
+
+.cadenas.is-unlocking {
+  animation: cadenas-unlock var(--d-slow) var(--ease-bounce) forwards;
+  animation-delay: var(--cadenas-delay);
+}
+
+.cadenas.is-pulsing {
+  animation: cadenas-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes cadenas-clack {
+  0%   { transform: scale(0) rotate(-15deg);  opacity: 0; }
+  60%  { transform: scale(1.2) rotate(5deg);  opacity: 1; }
+  80%  { transform: scale(0.95) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0);       opacity: 1; }
+}
+
+@keyframes cadenas-unlock {
+  0%   { transform: scale(1) rotate(0); }
+  30%  { transform: scale(1.4) rotate(-12deg); }
+  100% { transform: scale(1) rotate(8deg); }
+}
+
+@keyframes cadenas-pulse {
+  0%, 100% { transform: scale(1);    box-shadow: var(--shadow); }
+  50%      { transform: scale(1.05); box-shadow: var(--shadow-lg); }
+}
+
+/* ----- 6. Scenario card (composant 6.1) ----------------------------------- *
+ * Source canonique : D3 (4 scenarios grille 2x2 + 3 mini-options).
+ * Réutilisé par D7 et D11 (3 instances identiques).
+ *
+ * Usage :
+ *   <div class="scenario-card">
+ *     <div class="scenario-card__image placeholder-image">[illu]</div>
+ *     <h3 class="scenario-card__title">Titre du scenario</h3>
+ *     <div class="scenario-card__options">
+ *       <button class="scenario-card__option">option A</button>
+ *       <button class="scenario-card__option">option B</button>
+ *     </div>
+ *   </div>
+ *
+ * Layout parent suggere :
+ *   .scenario-card-grid   grille 2x2 par defaut, .scenario-card-grid--1x3 pour 3 cards en ligne
+ *
+ * Variantes :
+ *   .is-in                anime entrance (scale-pop)
+ *   .is-decided           card votee, mise en avant violet
+ *   .scenario-card__options--3 layout 3 options (vote multiple)
+ * --------------------------------------------------------------------------- */
+
+.scenario-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: var(--s-4);
+}
+
+.scenario-card-grid--1x3 {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: 1fr;
+}
+
+.scenario-card {
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  border-radius: var(--r-md);
+  padding: var(--s-3);
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  gap: var(--s-2);
+  position: relative;
+  transition: border-color var(--d-fast) var(--ease-out),
+              box-shadow var(--d-fast) var(--ease-out);
+}
+
+.scenario-card.is-in {
+  opacity: 0;
+  transform: scale(0);
+  animation: scenario-card-pop 350ms var(--ease-bounce) forwards;
+}
+
+.scenario-card.is-decided {
+  border-color: var(--accent-1);
+  box-shadow: var(--shadow-accent-1);
+}
+
+.scenario-card__image {
+  background: var(--bg-2);
+  border: var(--border-thin);
+  border-radius: var(--r-md);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: var(--t-small);
+  letter-spacing: 0.16em;
+  color: var(--ink);
+  opacity: 0.7;
+  padding: var(--s-3);
+  min-height: 130px;
+  animation: scenario-card-bobbing 3s ease-in-out infinite;
+}
+
+.scenario-card__title {
+  font-family: var(--display);
+  font-size: var(--t-h2);
+  font-weight: 900;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 0;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.scenario-card__options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--s-2);
+}
+
+.scenario-card__options--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.scenario-card__option {
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--border-thin);
+  border-radius: var(--r-sm);
+  padding: var(--s-2) var(--s-1);
+  font-family: var(--display);
+  font-size: var(--t-body);
+  font-weight: 700;
+  text-transform: lowercase;
+  text-align: center;
+  cursor: var(--cursor-pointer);
+  transition: transform var(--d-fast) var(--ease-out),
+              background var(--d-fast) var(--ease-out),
+              box-shadow var(--d-fast) var(--ease-out);
+}
+
+.scenario-card__option:hover {
+  background: var(--bg-2);
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.scenario-card__option.is-active {
+  background: var(--accent-3);
+  border-color: var(--ink);
+  transform: scale(1.05);
+}
+
+@keyframes scenario-card-pop {
+  0%   { opacity: 0; transform: scale(0); }
+  60%  { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes scenario-card-bobbing {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+/* ----- 9. Bouton-bascule (interrupteur virtuel, composant 2.3) ------------ *
+ * Source canonique : E4 (toggle ET/OU). Demande de la fiche : rotation 180°
+ * autour de l'axe horizontal au clic, 250ms ease-bounce.
+ *
+ * Usage :
+ *   <label class="bouton-bascule">
+ *     <span class="bouton-bascule__mark bouton-bascule__mark--left">ET</span>
+ *     <span class="bouton-bascule__pad"></span>
+ *     <span class="bouton-bascule__mark bouton-bascule__mark--right">OU</span>
+ *   </label>
+ *
+ * Etats (sur le conteneur) :
+ *   .is-left   - label gauche actif (etat 0)
+ *   .is-right  - label droit actif (etat 1)
+ *
+ * Variantes :
+ *   .bouton-bascule--passif - demo passive (montre l'etat sans interaction)
+ * --------------------------------------------------------------------------- */
+
+.bouton-bascule {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  user-select: none;
+}
+
+.bouton-bascule__pad {
+  width: 64px;
+  height: 32px;
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  border: var(--border-thin);
+  position: relative;
+  cursor: var(--cursor-pointer);
+  transition: background var(--d-normal) var(--ease-out);
+}
+
+.bouton-bascule__pad::after {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: var(--ink);
+  border-radius: 50%;
+  top: 50%;
+  left: 4px;
+  transform: translateY(-50%) rotateX(0);
+  transition: left 250ms var(--ease-bounce),
+              transform 250ms var(--ease-bounce),
+              background var(--d-normal) var(--ease-out);
+}
+
+.bouton-bascule.is-right .bouton-bascule__pad {
+  background: var(--accent-1);
+}
+
+.bouton-bascule.is-right .bouton-bascule__pad::after {
+  left: 36px;
+  background: var(--paper);
+  transform: translateY(-50%) rotateX(180deg);
+}
+
+.bouton-bascule__mark {
+  font-family: var(--display);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  font-size: var(--t-body-xl);
+  opacity: 0.4;
+  transition: opacity var(--d-normal) var(--ease-out);
+}
+
+.bouton-bascule.is-left  .bouton-bascule__mark--left  { opacity: 1; }
+.bouton-bascule.is-right .bouton-bascule__mark--right { opacity: 1; }
+
+.bouton-bascule--passif .bouton-bascule__pad {
+  cursor: var(--cursor-not-allowed);
+}
+
+/* ----- Helpers DOM utilises par core/effects.js --------------------------- *
+ * Ces classes sont posees sur les noeuds que core/effects.js cree.
+ * Elles utilisent toutes des custom properties pour la palette,
+ * setees au moment du spawn par le helper JS.
+ * --------------------------------------------------------------------------- */
+
+/* Etincelles cyan (composant 5.7) - particules DOM autour d'un anchor. */
+.etincelles-cyan {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.etincelles-cyan__spark {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 12px var(--accent-2);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  --etincelles-cyan-tx: 0px;
+  --etincelles-cyan-ty: 0px;
+  --etincelles-cyan-duration: 900ms;
+  animation: etincelles-cyan-pop var(--etincelles-cyan-duration) ease-out forwards;
+}
+
+@keyframes etincelles-cyan-pop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+  20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--etincelles-cyan-tx)),
+                         calc(-50% + var(--etincelles-cyan-ty))) scale(0.4);
+  }
+}
+
+/* Confettis reward (composant 5.8) - gerbe depuis un point. */
+.confettis-reward {
+  position: absolute;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.confettis-reward__piece {
+  position: absolute;
+  width: 10px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  --confettis-reward-dx: 0px;
+  --confettis-reward-dy: 0px;
+  --confettis-reward-rot: 0deg;
+  --confettis-reward-duration: 900ms;
+  animation: confettis-reward-burst var(--confettis-reward-duration) var(--ease-out) forwards;
+}
+
+@keyframes confettis-reward-burst {
+  0%   { opacity: 1; transform: translate(-50%, -50%) rotate(0deg); }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--confettis-reward-dx)),
+                         calc(-50% + var(--confettis-reward-dy))) rotate(var(--confettis-reward-rot));
+  }
+}
+
+/* Shockwave (composant 5.9) - onde de victoire circulaire. */
+.shockwave {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border: 4px solid var(--accent-3);
+  border-radius: var(--r-pill);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 1;
+  --shockwave-rayon: 1200px;
+  --shockwave-duration: 700ms;
+  animation: shockwave-expand var(--shockwave-duration) var(--ease-out) forwards;
+}
+
+@keyframes shockwave-expand {
+  0%   { width: 0;                       height: 0;                       opacity: 1; }
+  100% { width: var(--shockwave-rayon);  height: var(--shockwave-rayon);  opacity: 0; }
+}
+
+/* Pluie de prenoms (composant 5.2) - parallax 3 niveaux. */
+.pluie-de-prenoms {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.pluie-de-prenoms__prenom {
+  position: absolute;
+  font-family: var(--display);
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--accent-1);
+  user-select: none;
+  will-change: transform, opacity;
+  --pluie-de-prenoms-x: 50%;
+  --pluie-de-prenoms-size: 32px;
+  --pluie-de-prenoms-opacity: 0.6;
+  --pluie-de-prenoms-rot: 0deg;
+  --pluie-de-prenoms-duration: 6s;
+  left: var(--pluie-de-prenoms-x);
+  top: -120px;
+  font-size: var(--pluie-de-prenoms-size);
+  opacity: var(--pluie-de-prenoms-opacity);
+  transform: rotate(var(--pluie-de-prenoms-rot));
+  animation: pluie-de-prenoms-fall var(--pluie-de-prenoms-duration) linear forwards;
+}
+
+@keyframes pluie-de-prenoms-fall {
+  0%   { transform: translateY(0)    rotate(var(--pluie-de-prenoms-rot)); }
+  100% { transform: translateY(120vh) rotate(var(--pluie-de-prenoms-rot)); }
+}
+
+/* Fireworks (extensible) - palette tinta complete. */
+.fireworks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.fireworks__spark {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  opacity: 0;
+  --fireworks-x: 50%;
+  --fireworks-y: 50%;
+  --fireworks-dx: 0px;
+  --fireworks-dy: 0px;
+  --fireworks-color: var(--accent-3);
+  --fireworks-duration: 1200ms;
+  left: var(--fireworks-x);
+  top: var(--fireworks-y);
+  background: var(--fireworks-color);
+  box-shadow: 0 0 12px var(--fireworks-color);
+  animation: fireworks-spark var(--fireworks-duration) ease-out forwards;
+}
+
+@keyframes fireworks-spark {
+  0%   { transform: translate(0, 0) scale(0); opacity: 1; }
+  20%  { opacity: 1; }
+  100% { transform: translate(var(--fireworks-dx), var(--fireworks-dy)) scale(1.6); opacity: 0; }
+}

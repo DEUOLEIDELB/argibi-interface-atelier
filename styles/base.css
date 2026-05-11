@@ -1,0 +1,252 @@
+/* ==========================================================================
+   base.css — Reset minimal, typo de base, layout principal du shell.
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--body);
+  font-size: var(--t-body);
+  color: var(--ink);
+  background: var(--bg);
+  line-height: 1.4;
+  cursor: var(--cursor-default);
+}
+
+button {
+  font-family: inherit;
+  cursor: var(--cursor-pointer);
+}
+
+input, textarea {
+  font-family: inherit;
+  cursor: var(--cursor-text);
+}
+
+img { max-width: 100%; height: auto; display: block; }
+
+/* ----- Shell layout -------------------------------------------------------- */
+
+#shell {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-rows: var(--shell-top-h) 1fr var(--shell-bottom-h);
+  background: var(--bg);
+}
+
+#shell.is-fullscreen .shell-band { display: none; }
+#shell.is-fullscreen #stage-wrap { grid-row: 1 / -1; }
+
+.shell-band {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--s-4);
+  gap: var(--s-4);
+  background: var(--bg);
+  border-color: var(--ink);
+  z-index: 5;
+}
+
+.shell-band--top    { border-bottom: var(--border); justify-content: space-between; }
+.shell-band--bottom { border-top: var(--border);    justify-content: space-between; }
+
+#stage-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+#stage {
+  position: relative;
+  width: min(var(--stage-w), calc(100vw - var(--s-4) * 2));
+  height: min(var(--stage-h), calc(100vh - var(--shell-top-h) - var(--shell-bottom-h)));
+  background: var(--bg);
+}
+
+/* ----- Shell controls ------------------------------------------------------ */
+
+.shell-btn {
+  font-family: var(--display);
+  font-size: var(--t-body);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: 12px 20px;
+  border-radius: var(--r-md);
+  cursor: var(--cursor-pointer);
+  transition: transform var(--d-fast) var(--ease-out),
+              box-shadow var(--d-fast) var(--ease-out);
+}
+
+.shell-btn:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: var(--shadow);
+}
+
+.shell-pagination {
+  display: flex;
+  gap: var(--s-1);
+  align-items: center;
+  justify-content: center;
+}
+
+.shell-pagination .dot {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  border: var(--border-thin);
+  transition: background var(--d-fast) var(--ease-out),
+              transform var(--d-fast) var(--ease-out);
+}
+
+.shell-pagination .dot.is-current { background: var(--accent-1); transform: scale(1.2); }
+.shell-pagination .dot.is-done    { background: var(--ink); }
+
+.watermark {
+  position: fixed;
+  right: var(--s-3);
+  bottom: calc(var(--shell-bottom-h) + var(--s-1)); /* 88px du bas, juste au-dessus du bandeau */
+  transform: none;
+  font-family: var(--mono);
+  font-size: var(--t-tiny);
+  color: var(--ink);
+  opacity: 0.5;
+  letter-spacing: 0.16em;
+  pointer-events: none;
+  z-index: 4; /* sous les overlays (100), au-dessus du #stage */
+}
+
+#shell.is-fullscreen .watermark { display: none; }
+
+/* ----- Overlays (panel phases + panneau animateur) ------------------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(25, 25, 25, 0.6);
+}
+
+.overlay.is-open { display: flex; }
+
+.overlay__panel {
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow-xl);
+  border-radius: var(--r-lg);
+  padding: var(--s-5);
+  max-width: 1200px;
+  width: calc(100vw - var(--s-7));
+  max-height: calc(100vh - var(--s-7));
+  overflow: auto;
+}
+
+.overlay__title {
+  font-family: var(--display);
+  font-size: var(--t-h1);
+  margin: 0 0 var(--s-4);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+/* Panel phases */
+.phase-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-3);
+}
+
+.phase-card {
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  padding: var(--s-3);
+  cursor: var(--cursor-pointer);
+  transition: transform var(--d-fast) var(--ease-out),
+              box-shadow var(--d-fast) var(--ease-out);
+  text-align: left;
+  font-family: var(--body);
+}
+
+.phase-card:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.phase-card__id {
+  font-family: var(--mono);
+  font-size: var(--t-small);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-1);
+}
+
+.phase-card__title {
+  font-family: var(--display);
+  font-size: var(--t-h2);
+  margin: var(--s-1) 0;
+  text-transform: uppercase;
+}
+
+.phase-card__count {
+  font-family: var(--mono);
+  font-size: var(--t-tiny);
+  color: var(--ink);
+  opacity: 0.6;
+  letter-spacing: 0.2em;
+}
+
+/* Panneau animateur (caché par défaut, touche H) */
+#animator-panel.is-open { display: flex; }
+
+.animator__row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-2);
+  font-family: var(--mono);
+  font-size: var(--t-tiny);
+  letter-spacing: 0.16em;
+}
+
+.animator__label { opacity: 0.6; min-width: 160px; }
+.animator__value { font-weight: 700; }
+
+.animator__actions {
+  display: flex;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+  margin-top: var(--s-3);
+}
+
+.animator__btn {
+  font-family: var(--mono);
+  font-size: var(--t-tiny);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: var(--ink);
+  color: var(--paper);
+  border: var(--border-thin);
+  padding: 8px 14px;
+  border-radius: var(--r-sm);
+  cursor: var(--cursor-pointer);
+}
+
+.animator__btn:hover { background: var(--accent-1); }

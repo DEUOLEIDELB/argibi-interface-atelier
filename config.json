@@ -1,0 +1,16 @@
+{
+  "appName": "Capsule Argibi · Atelier",
+  "version": "1.0.0",
+  "targetResolution": { "width": 1920, "height": 1080 },
+  "stage": { "width": 1760, "height": 880 },
+  "shellBands": { "top": 80, "bottom": 80 },
+  "audio": { "maxVolume": 0.7 },
+  "grist": {
+    "enabled": false,
+    "apiBase": "https://docs.getgrist.com/api",
+    "docId": "",
+    "apiKey": "",
+    "timeoutMs": 3000
+  },
+  "phasesPreload": ["phase-A"]
+}

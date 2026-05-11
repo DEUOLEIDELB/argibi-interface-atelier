@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1920, initial-scale=1" />
+  <title>Capsule Argibi · Atelier</title>
+
+  <!-- Favicon vide pour eviter le 404 par defaut. Remplacable par un SVG inline plus tard. -->
+  <link rel="icon" href="data:," />
+
+  <!-- Polices Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=Archivo+Black&family=JetBrains+Mono:wght@400;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Tokens, base, composants -->
+  <link rel="stylesheet" href="styles/tokens.css" />
+  <link rel="stylesheet" href="styles/base.css" />
+  <link rel="stylesheet" href="styles/components.css" />
+
+  <!-- Import map : Pixi v8 + Alpine.js 3 en ESM via CDN. Pas de build step.
+       Alpine est importe par le module final (controle total : on appelle
+       Alpine.start() manuellement APRES avoir enregistre Alpine.data()
+       et bootstrappe Pixi/nav. Plus de race avec deferLoadingAlpine. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "pixi.js":   "https://cdn.jsdelivr.net/npm/pixi.js@8.6.0/dist/pixi.min.mjs",
+        "alpinejs":  "https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/module.esm.js"
+      }
+    }
+  </script>
+
+  <!-- p5.js (chargé d'avance pour les pages cinématiques A4/E0/F1/B4/D2) -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.10.0/lib/p5.min.js"></script>
+</head>
+
+<body>
+
+<!-- =========================================================================
+     SHELL — bandeau top + zone de contenu + bandeau bottom + watermark
+     ========================================================================= -->
+<div id="shell" x-data="shellState" @argibi:nav-changed.window="onNavChanged($event)">
+
+  <!-- Bandeau top -->
+  <header class="shell-band shell-band--top">
+    <button class="shell-btn" @click="navBack()" aria-label="retour">[ back ]</button>
+    <span class="eyebrow" x-text="currentLabel"></span>
+    <button class="shell-btn" @click="togglePhases()" aria-label="phases">[ phases ]</button>
+  </header>
+
+  <!-- Zone de contenu -->
+  <div id="stage-wrap">
+    <div id="stage" aria-live="polite">
+      <!-- Pixi canvas + DOM des steps injectés ici. -->
+    </div>
+  </div>
+
+  <!-- Bandeau bottom -->
+  <footer class="shell-band shell-band--bottom">
+    <button class="shell-btn" @click="navBack()" aria-label="précédent">[ &lt; ]</button>
+    <nav class="shell-pagination" aria-label="progression de la phase">
+      <template x-for="(id, i) in phaseSteps" :key="id">
+        <span
+          class="dot"
+          :class="{
+            'is-current': i === stepInPhaseIdx,
+            'is-done': i < stepInPhaseIdx,
+          }"
+          :title="id"
+        ></span>
+      </template>
+    </nav>
+    <button class="shell-btn" @click="navNext()" aria-label="suivant">[ &gt; ]</button>
+  </footer>
+
+  <span class="watermark">wubo · argibi</span>
+
+  <!-- =====================================================================
+       OVERLAY — Panel des phases (touche M)
+       ===================================================================== -->
+  <div
+    id="phases-overlay"
+    class="overlay"
+    :class="{ 'is-open': phasesOpen }"
+    @click.self="phasesOpen = false"
+    @argibi:toggle-phases.window="phasesOpen = !phasesOpen"
+    @argibi:close-overlays.window="phasesOpen = false"
+  >
+    <div class="overlay__panel">
+      <h2 class="overlay__title">Phases de l'atelier</h2>
+      <div class="phase-grid">
+        <template x-for="phase in phases" :key="phase.id">
+          <button class="phase-card" @click="goToPhase(phase.id)">
+            <span class="phase-card__id" x-text="phase.id + ' · ' + phase.label"></span>
+            <h3 class="phase-card__title" x-text="phase.label"></h3>
+            <span class="phase-card__count" x-text="phase.count + ' étape' + (phase.count > 1 ? 's' : '')"></span>
+          </button>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       OVERLAY — Panneau animateur (touche H)
+       ===================================================================== -->
+  <div
+    id="animator-overlay"
+    class="overlay"
+    :class="{ 'is-open': animatorOpen }"
+    @click.self="animatorOpen = false"
+    @argibi:toggle-animator.window="animatorOpen = !animatorOpen"
+    @argibi:close-overlays.window="animatorOpen = false"
+  >
+    <div class="overlay__panel">
+      <h2 class="overlay__title">Panneau animateur</h2>
+      <div class="animator__row">
+        <span class="animator__label">step courant</span>
+        <span class="animator__value" x-text="currentStepId || '—'"></span>
+      </div>
+      <div class="animator__row">
+        <span class="animator__label">phase</span>
+        <span class="animator__value" x-text="phase || '—'"></span>
+      </div>
+      <div class="animator__row">
+        <span class="animator__label">complété ?</span>
+        <span class="animator__value" x-text="isComplete ? 'oui' : 'non'"></span>
+      </div>
+      <div class="animator__row">
+        <span class="animator__label">historique</span>
+        <span class="animator__value" x-text="history.join(' → ') || '—'"></span>
+      </div>
+      <div class="animator__row">
+        <span class="animator__label">audio</span>
+        <span class="animator__value" x-text="muted ? 'muet' : 'on'"></span>
+      </div>
+      <div class="animator__actions">
+        <button class="animator__btn" @click="skipCurrent()">skip step</button>
+        <button class="animator__btn" @click="replayCurrent()">replay (R)</button>
+        <button class="animator__btn" @click="toggleMute()">mute on/off</button>
+        <button class="animator__btn" @click="resetSession()">reset session</button>
+        <button class="animator__btn" @click="openGrist()">ouvrir grist</button>
+        <button class="animator__btn" @click="animatorOpen = false">fermer (H)</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- =========================================================================
+     BOOT
+     ========================================================================= -->
+<div id="boot-loader" style="
+  position: fixed; inset: 0; z-index: 1000;
+  display: grid; place-items: center;
+  font-family: 'Archivo Black', sans-serif; font-size: 24px;
+  background: #FAF5F2; color: #191919;
+">chargement…</div>
+
+<!-- Module principal : import Alpine en ESM (controle total), boot Pixi + nav,
+     Alpine.data('shellState') puis Alpine.start() = plus aucune race. -->
+<script type="module">
+  import Alpine from 'alpinejs';
+  import { bootApp } from './core/app.js';
+  import { bootNav, navAPI } from './core/nav.js';
+  import { preloadSounds, toggleMuted, isMuted } from './core/audio.js';
+  import { resetSession } from './core/state.js';
+  import { configureGrist } from './core/grist.js';
+  import { PHASE_INFO, PHASE_OF } from './core/step-order.js';
+
+  // Expose globalement ce dont Alpine aura besoin (lecture seulement).
+  window.Alpine = Alpine;
+  window.PHASE_OF = PHASE_OF;
+
+  // Charge config.json (non bloquant) et configure Grist. Tant que
+  // grist.enabled = false dans config.json, aucun appel reseau ne sera fait,
+  // fetchSchool() retournera direct le cache localStorage.
+  async function loadConfig() {
+    try {
+      const res = await fetch('config.json', { cache: 'no-store' });
+      if (!res.ok) return {};
+      return await res.json();
+    } catch (err) {
+      console.info('[boot] config.json indisponible :', err.message);
+      return {};
+    }
+  }
+
+  function registerAlpineData() {
+    Alpine.data('shellState', () => ({
+      currentStepId: null,
+      phase: null,
+      phaseSteps: [],
+      stepInPhaseIdx: -1,
+      isComplete: false,
+      history: [],
+      phasesOpen: false,
+      animatorOpen: false,
+      muted: isMuted(),
+      phases: Object.values(PHASE_INFO),
+
+      get currentLabel() {
+        if (!this.currentStepId) return '—';
+        if (this.currentStepId === '_template') return 'TEMPLATE · FONDATION';
+        return `${this.phase || '?'} · ${this.currentStepId}`;
+      },
+
+      onNavChanged(e) {
+        Object.assign(this, {
+          currentStepId: e.detail.currentStepId,
+          phase: e.detail.phase,
+          phaseSteps: e.detail.phaseSteps,
+          stepInPhaseIdx: e.detail.stepInPhaseIdx,
+          isComplete: e.detail.isComplete,
+          history: e.detail.history || [],
+        });
+      },
+
+      navNext() { navAPI.next(); },
+      navBack() { navAPI.back(); },
+      togglePhases() { this.phasesOpen = !this.phasesOpen; this.animatorOpen = false; },
+      goToPhase(phaseId) {
+        const stepId = (window.PHASE_OF || {})[phaseId]?.[0];
+        if (stepId) navAPI.goTo(stepId);
+        this.phasesOpen = false;
+      },
+      skipCurrent() { navAPI.markComplete(); navAPI.next(); this.animatorOpen = false; },
+      replayCurrent() { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'r' })); },
+      toggleMute() { this.muted = toggleMuted(); },
+      resetSession() {
+        if (!confirm('Réinitialiser la session courante ?')) return;
+        resetSession();
+        location.reload();
+      },
+      openGrist() {
+        window.open('https://docs.getgrist.com/', '_blank', 'noopener');
+      },
+    }));
+  }
+
+  (async () => {
+    try {
+      const cfg = await loadConfig();
+      configureGrist(cfg.grist || {});
+
+      await bootApp();
+      preloadSounds();          // non bloquant, silencieux (cf. B1.4)
+
+      // Enregistre shellState AVANT Alpine.start() (Alpine 3 supporte
+      // l'enregistrement post-import tant que start() n'a pas tourne).
+      registerAlpineData();
+      Alpine.start();           // Alpine traverse le DOM, attache les bindings.
+
+      // Apres Alpine.start, le shell ecoute argibi:nav-changed.
+      // bootNav dispatch cet event a la fin (notifyShellUpdate).
+      await bootNav();          // monte _template.js dans #stage
+
+      const loader = document.querySelector('#boot-loader');
+      if (loader) loader.remove();
+    } catch (err) {
+      console.error('[boot] erreur fatale :', err);
+      const loader = document.querySelector('#boot-loader');
+      if (loader) {
+        loader.textContent = 'erreur de chargement — voir la console';
+        loader.style.color = 'var(--accent-4)';
+      }
+    }
+  })();
+</script>
+
+</body>
+</html>
