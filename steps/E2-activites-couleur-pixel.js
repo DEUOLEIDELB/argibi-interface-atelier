@@ -13,8 +13,8 @@
 //   - cadenas indices deverrouillables (E2/E4 pattern, declare § 5.5/5.6)
 //
 // Persistance : state.steps.E2 = {
-//   couleur: { team: N, hintsRevealed: [bool, bool, bool] },
-//   pixel:   { team: N, hintsRevealed: [bool, bool, bool] },
+//   couleur: { team: N },
+//   pixel:   { team: N },
 // }
 // Les 4 chiffres viendront de la dictee en E3, pas d'ici.
 
@@ -32,35 +32,22 @@ let tickerFns = [];
 let styleNode = null;
 
 let state = {
-  couleur: { team: 0, hintsRevealed: [false, false, false] },
-  pixel:   { team: 0, hintsRevealed: [false, false, false] },
+  couleur: { team: 0 },
+  pixel:   { team: 0 },
 };
 let focusZone = null;  // 'couleur' | 'pixel'
 
 const STYLE_ID = 'step-E2-style';
-
-const HINTS_TEXT = {
-  couleur: [
-    'la lettre R, c\'est ton chiffre 0',
-    'le code monte par 2 quand 2 cercles se croisent',
-    'le secret tient sur la couleur la plus saturee',
-  ],
-  pixel: [
-    'compte les pixels d\'une seule colonne',
-    'le motif est symetrique : verifie l\'axe',
-    'le chiffre c\'est la ligne du dernier pixel',
-  ],
-};
 
 const CSS = `
 .step-E2 {
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  align-items: center;
+  grid-template-rows: auto auto auto;
+  align-items: start;
   justify-items: center;
-  padding: var(--s-3) var(--s-6) var(--s-3);
+  padding: var(--s-3) var(--s-6) var(--s-8);
   text-align: center;
   cursor: var(--cursor-default);
   gap: var(--s-3);
@@ -120,11 +107,14 @@ const CSS = `
   overflow: hidden;
 }
 
-/* Illu COULEUR : 3 cercles RGB qui se superposent */
+/* Illu COULEUR : 3 cercles RGB qui se superposent (synthese ADDITIVE).
+   Fond noir pour que le blend "screen" donne les vraies couleurs RGB. */
 .step-E2__illu-rgb {
   width: 100%;
   height: 220px;
   position: relative;
+  background: #000;
+  border-radius: var(--r-md);
 }
 .step-E2__rgb-circle {
   position: absolute;
@@ -133,12 +123,12 @@ const CSS = `
   border-radius: 50%;
   top: 50%;
   left: 50%;
-  mix-blend-mode: multiply;
+  mix-blend-mode: screen;
   animation: e2-rgb-orbit 4s ease-in-out infinite;
 }
-.step-E2__rgb-circle--r { background: var(--accent-4); animation-delay: 0s;   }
-.step-E2__rgb-circle--g { background: var(--accent-3); animation-delay: 1.3s; }
-.step-E2__rgb-circle--b { background: var(--accent-2); animation-delay: 2.6s; }
+.step-E2__rgb-circle--r { background: #FF0000; animation-delay: 0s;   }
+.step-E2__rgb-circle--g { background: #00FF00; animation-delay: 1.3s; }
+.step-E2__rgb-circle--b { background: #0000FF; animation-delay: 2.6s; }
 
 @keyframes e2-rgb-orbit {
   0%, 100% { transform: translate(-50%, -50%) translate( 0,    0); }
@@ -163,58 +153,6 @@ const CSS = `
   margin: 0;
   line-height: 1.3;
   color: var(--ink);
-}
-
-.step-E2__card-meta {
-  font-family: var(--mono);
-  font-size: var(--t-small);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  opacity: 0.6;
-  margin: 0;
-}
-
-/* Bandeau hints : 3 cadenas (composant partage .cadenas) + zone d'affichage */
-.step-E2__hints {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--s-2);
-}
-.step-E2__hints-row {
-  display: flex;
-  gap: var(--s-2);
-  align-items: center;
-}
-.step-E2__hint-locker {
-  --cadenas-size: 64px;
-}
-.step-E2__hint-locker:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow); }
-
-.step-E2__hints-revealed {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-1);
-  min-height: 60px;
-}
-.step-E2__hint-bubble {
-  font-family: var(--display);
-  font-size: var(--t-body-xl);
-  font-weight: 600;
-  background: var(--accent-3);
-  color: var(--ink);
-  border: var(--border-thin);
-  border-radius: var(--r-md);
-  padding: var(--s-1) var(--s-2);
-  display: inline-block;
-  animation: e2-hint-drop var(--d-normal) var(--ease-bounce);
-  align-self: flex-start;
-}
-.step-E2__hint-bubble::before {
-  content: '💡 ';
-}
-@keyframes e2-hint-drop {
-  0%   { transform: translateY(-30px); opacity: 0; }
-  100% { transform: translateY(0);     opacity: 1; }
 }
 
 /* Compteur equipe + bouton + */
@@ -278,9 +216,42 @@ const CSS = `
 /* Bottom row (Tuko mascotte = position absolue bas-gauche, ne prend pas de place) */
 .step-E2__bottom {
   display: grid;
-  place-items: end center;
+  place-items: start center;
   width: 100%;
-  padding-bottom: var(--s-1);
+  margin-top: var(--s-2);
+}
+
+/* Tuko epreuve grand en bas-gauche, shake aleatoire */
+.step-E2__tuko-wrap {
+  position: absolute;
+  left: var(--s-5);
+  bottom: var(--s-3);
+  opacity: 0;
+  transform: translateX(-120%);
+  animation: e2-slide-in-tuko var(--d-slow) var(--ease-out) 0.8s forwards;
+  z-index: 5;
+  pointer-events: none;
+}
+.step-E2__tuko-img {
+  display: block;
+  width: clamp(220px, 22vw, 360px);
+  height: auto;
+  transform-origin: 50% 90%;
+}
+.step-E2__tuko-img.is-shaking {
+  animation: e2-tuko-shake 600ms var(--ease-out);
+}
+@keyframes e2-slide-in-tuko {
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes e2-tuko-shake {
+  0%   { transform: rotate(0deg)  translateX(0); }
+  15%  { transform: rotate(-8deg) translateX(-4px); }
+  30%  { transform: rotate(7deg)  translateX(4px); }
+  45%  { transform: rotate(-6deg) translateX(-3px); }
+  60%  { transform: rotate(5deg)  translateX(3px); }
+  75%  { transform: rotate(-3deg) translateX(-2px); }
+  100% { transform: rotate(0deg)  translateX(0); }
 }
 .step-E2__cta {
   opacity: 0;
@@ -351,7 +322,7 @@ function generatePixelPattern() {
 /* --------------------------------------------------------------------------
    Cards
    -------------------------------------------------------------------------- */
-function buildCard(zone, label, illuFactory, consigne, mag) {
+function buildCard(zone, label, illuFactory, consigne) {
   const card = document.createElement('div');
   card.className = `card-clickable step-E2__card step-E2__card--${zone}`;
   card.dataset.zone = zone;
@@ -370,32 +341,6 @@ function buildCard(zone, label, illuFactory, consigne, mag) {
   c.className = 'step-E2__card-consigne';
   c.textContent = consigne;
   card.appendChild(c);
-
-  const m = document.createElement('p');
-  m.className = 'step-E2__card-meta';
-  m.textContent = mag;
-  card.appendChild(m);
-
-  // Hints : 3 cadenas (composant partage .cadenas), initialement fermes + pulse
-  const hints = document.createElement('div');
-  hints.className = 'step-E2__hints';
-  const hintsRow = document.createElement('div');
-  hintsRow.className = 'step-E2__hints-row';
-  for (let i = 0; i < 3; i++) {
-    const lock = document.createElement('button');
-    lock.type = 'button';
-    lock.className = 'cadenas cadenas--ferme is-pulsing step-E2__hint-locker';
-    lock.dataset.zone = zone;
-    lock.dataset.hintIdx = String(i);
-    lock.setAttribute('aria-label', `Indice ${i + 1}`);
-    hintsRow.appendChild(lock);
-  }
-  hints.appendChild(hintsRow);
-  const revealed = document.createElement('div');
-  revealed.className = 'step-E2__hints-revealed';
-  revealed.dataset.zone = zone;
-  hints.appendChild(revealed);
-  card.appendChild(hints);
 
   // Team row
   const team = document.createElement('div');
@@ -436,21 +381,36 @@ function buildDom(navAPI) {
   cards.appendChild(buildCard(
     'couleur', 'COULEUR', buildIlluCouleur,
     'melange les couleurs pour trouver le code',
-    'feuille mag. p. 22',
   ));
   cards.appendChild(buildCard(
     'pixel', 'PIXEL', buildIlluPixel,
     'allume les pixels pour trouver le code',
-    'feuille mag. p. 24',
   ));
   wrap.appendChild(cards);
 
-  // Tuko arbitre — composant partage .tuko-mascotte (position absolue bas-gauche)
-  const tuko = document.createElement('div');
-  tuko.className = 'tuko-mascotte';
-  tuko.dataset.pose = 'arbitre';
-  tuko.dataset.position = 'bas-gauche';
-  wrap.appendChild(tuko);
+  // Tuko epreuve grand en bas-gauche (sprite reel + shake aleatoire)
+  const tukoWrap = document.createElement('div');
+  tukoWrap.className = 'step-E2__tuko-wrap';
+  const tukoImg = document.createElement('img');
+  tukoImg.className = 'step-E2__tuko-img';
+  tukoImg.src = 'assets/sprites/tuko_epreuve.png';
+  tukoImg.alt = '';
+  tukoWrap.appendChild(tukoImg);
+  wrap.appendChild(tukoWrap);
+
+  // Shake aleatoire (intervalle 3-7s)
+  const scheduleShake = () => {
+    const delay = 3000 + Math.random() * 4000;
+    const t = setTimeout(() => {
+      tukoImg.classList.remove('is-shaking');
+      void tukoImg.offsetWidth;
+      tukoImg.classList.add('is-shaking');
+      scheduleShake();
+    }, delay);
+    timers.push(t);
+  };
+  const tFirstShake = setTimeout(scheduleShake, 2200);
+  timers.push(tFirstShake);
 
   // Bottom row : CTA centree (Tuko est en position absolue)
   const bottom = document.createElement('div');
@@ -473,22 +433,12 @@ function attachListeners(wrap, navAPI) {
   // Card click -> focus
   wrap.querySelectorAll('.step-E2__card').forEach(card => {
     const onClick = (e) => {
-      // Ignore les cliques sur boutons internes (locks, +)
-      if (e.target.closest('.step-E2__hint-locker, .step-E2__team-add')) return;
+      // Ignore les cliques sur boutons internes
+      if (e.target.closest('.step-E2__team-add')) return;
       setFocusZone(wrap, card.dataset.zone);
     };
     card.addEventListener('click', onClick);
     handlers.push([card, 'click', onClick]);
-  });
-
-  // Hint locker click -> reveal
-  wrap.querySelectorAll('.step-E2__hint-locker').forEach(lock => {
-    const onClick = (e) => {
-      e.stopPropagation();
-      revealHint(wrap, lock.dataset.zone, +lock.dataset.hintIdx);
-    };
-    lock.addEventListener('click', onClick);
-    handlers.push([lock, 'click', onClick]);
   });
 
   // + equipe
@@ -512,11 +462,6 @@ function attachListeners(wrap, navAPI) {
     } else if (k === '2') {
       e.preventDefault(); e.stopPropagation();
       setFocusZone(wrap, 'pixel');
-    } else if (k === 'q' || k === 'w' || k === 'e') {
-      if (!focusZone) return;
-      const idx = { q: 0, w: 1, e: 2 }[k];
-      e.preventDefault(); e.stopPropagation();
-      revealHint(wrap, focusZone, idx);
     } else if (e.key === '+' || (e.key === '=' && e.shiftKey)) {
       if (!focusZone) return;
       e.preventDefault(); e.stopPropagation();
@@ -548,51 +493,6 @@ function setFocusZone(wrap, zone) {
   });
   play('pop');
   // Tuko regarde la card focusee : visuel implicite via la card mise en avant.
-}
-
-function revealHint(wrap, zone, idx) {
-  if (!['couleur', 'pixel'].includes(zone)) return;
-  if (idx < 0 || idx > 2) return;
-  if (state[zone].hintsRevealed[idx]) return;
-
-  state[zone].hintsRevealed[idx] = true;
-  saveStepState('E2', { ...state });
-
-  const lock = wrap.querySelector(
-    `.step-E2__hint-locker[data-zone="${zone}"][data-hint-idx="${idx}"]`,
-  );
-  if (lock) {
-    lock.classList.remove('is-pulsing');
-    lock.classList.add('is-unlocking');
-    // A la fin de l'animation unlock, on bascule sur l'etat ouvert.
-    const tOpen = setTimeout(() => {
-      lock.classList.remove('cadenas--ferme');
-      lock.classList.add('cadenas--ouvert');
-    }, 600);
-    timers.push(tOpen);
-  }
-  const revealed = wrap.querySelector(`.step-E2__hints-revealed[data-zone="${zone}"]`);
-  if (revealed) {
-    const bubble = document.createElement('div');
-    bubble.className = 'step-E2__hint-bubble';
-    bubble.textContent = HINTS_TEXT[zone][idx];
-    revealed.appendChild(bubble);
-  }
-  play('unlock');
-
-  // Reaction subtile de l'illu : la card couleur rapproche les cercles,
-  // la card pixel illumine 1 pixel-indice supplementaire (composant .matrice-8x8 .is-hint).
-  const card = wrap.querySelector(`.step-E2__card--${zone}`);
-  card?.classList.add(`has-hint-${idx + 1}`);
-  if (zone === 'pixel') {
-    const cells = card?.querySelectorAll('.matrice-8x8__pixel');
-    if (cells) {
-      const hintTargets = [3, 12, 60][idx];
-      cells.forEach((cell, ci) => {
-        if (ci === hintTargets) cell.classList.add('is-hint');
-      });
-    }
-  }
 }
 
 function incrementTeam(wrap, zone) {
@@ -631,35 +531,6 @@ function incrementTeam(wrap, zone) {
    -------------------------------------------------------------------------- */
 function restoreFromState(wrap) {
   ['couleur', 'pixel'].forEach(zone => {
-    state[zone].hintsRevealed.forEach((revealed, idx) => {
-      if (!revealed) return;
-      const lock = wrap.querySelector(
-        `.step-E2__hint-locker[data-zone="${zone}"][data-hint-idx="${idx}"]`,
-      );
-      if (lock) {
-        lock.classList.remove('is-pulsing', 'cadenas--ferme', 'is-unlocking');
-        lock.classList.add('cadenas--ouvert');
-      }
-      const r = wrap.querySelector(`.step-E2__hints-revealed[data-zone="${zone}"]`);
-      if (r) {
-        const b = document.createElement('div');
-        b.className = 'step-E2__hint-bubble';
-        b.textContent = HINTS_TEXT[zone][idx];
-        b.style.animation = 'none';
-        b.style.opacity = '1';
-        r.appendChild(b);
-      }
-      const card = wrap.querySelector(`.step-E2__card--${zone}`);
-      card?.classList.add(`has-hint-${idx + 1}`);
-      if (zone === 'pixel') {
-        const cells = card?.querySelectorAll('.matrice-8x8__pixel');
-        if (cells) {
-          const target = [3, 12, 60][idx];
-          cells.forEach((cell, ci) => { if (ci === target) cell.classList.add('is-hint'); });
-        }
-      }
-    });
-    // team count
     const num = wrap.querySelector(`.step-E2__team-num[data-zone="${zone}"]`);
     if (num) num.textContent = String(state[zone].team);
     const fill = wrap.querySelector(`.step-E2__team-fill[data-zone="${zone}"]`);
@@ -687,16 +558,8 @@ export default {
     enableKurnelOverlay();
 
     state = {
-      couleur: {
-        team: savedState?.couleur?.team ?? 0,
-        hintsRevealed: savedState?.couleur?.hintsRevealed?.slice(0, 3)
-                       ?? [false, false, false],
-      },
-      pixel: {
-        team: savedState?.pixel?.team ?? 0,
-        hintsRevealed: savedState?.pixel?.hintsRevealed?.slice(0, 3)
-                       ?? [false, false, false],
-      },
+      couleur: { team: savedState?.couleur?.team ?? 0 },
+      pixel:   { team: savedState?.pixel?.team   ?? 0 },
     };
 
     scene = new Container();
@@ -739,8 +602,8 @@ export default {
 
   serialize() {
     return {
-      couleur: { team: state.couleur.team, hintsRevealed: [...state.couleur.hintsRevealed] },
-      pixel:   { team: state.pixel.team,   hintsRevealed: [...state.pixel.hintsRevealed] },
+      couleur: { team: state.couleur.team },
+      pixel:   { team: state.pixel.team },
     };
   },
 

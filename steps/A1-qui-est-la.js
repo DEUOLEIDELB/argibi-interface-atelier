@@ -1,10 +1,11 @@
 // A1-qui-est-la.js — Saisie des prenoms de la classe.
-// Layout vertical centre : tuko absolute top-left, titre, input, cloud
-// (zone papier grande pour 25+ chips) avec compteur a droite, CTA en bas.
-// Chaque chip prend une couleur aleatoire des 4 accents Wubo avec
-// texte adapte pour le contraste (paper sur violet/rose, ink sur cyan/jaune).
-// CTA non anime, sans chevron. Sas de bascule (3.2.1.flash) au clic CTA.
-// Bandeaux shell visibles (pas fullscreen).
+// Layout projection 1920x1080 : titre HERO centre, input mega centre,
+// zone chips ouverte sans cadre paper (chips flottent dans le 1fr),
+// Tuko en debord gauche pose sur la zone, compteur en debord droite tres gros,
+// CTA centre en bas. Chaque chip prend une couleur aleatoire palette Wubo +
+// texte contraste (paper sur violet/rose, ink sur cyan/jaune). Animation
+// flottement permanente. CTA non anime, sans chevron. Sas de bascule
+// (3.2.1.flash) au clic CTA. Bandeaux shell visibles (pas fullscreen).
 // Cf. doc interne.
 
 import { Container } from 'pixi.js';
@@ -27,43 +28,18 @@ const STYLES = `
   display: grid;
   grid-template-rows: auto auto 1fr auto;
   gap: var(--s-2);
-  padding: var(--s-8) var(--s-5); /* 128px top/bottom : grosse respiration cible Taki */
+  /* asymetrique : top reduit pour 25 chips, bottom = s-8 (128px) pour
+     aligner le CTA "C'EST PARTI" a la meme hauteur que celui de A3. */
+  padding: var(--s-3) var(--s-5) var(--s-8) var(--s-5);
   background: var(--bg);
   overflow: hidden;
 }
 
-/* ----- Tuko : pose sur le bord superieur gauche du cloud, derriere -------- */
-
-.step-A1__tuko {
-  position: absolute;
-  top: 7px;
-  left: var(--s-3);
-  --tuko-mascotte-size: clamp(140px, 13vw, 180px);
-  background: url('assets/sprites/tuko_spectate.png') center / contain no-repeat !important;
-  border: none !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-  animation: a1-tuko-bobbing 2.4s ease-in-out infinite !important;
-  z-index: 1; /* derriere le cloud (z-index 2) */
-  pointer-events: none;
-}
-
-.step-A1__tuko::before,
-.step-A1__tuko::after {
-  content: none !important;
-  display: none !important;
-}
-
-@keyframes a1-tuko-bobbing {
-  0%, 100% { transform: translateY(0)    rotate(-2deg); }
-  50%      { transform: translateY(-6px) rotate(2deg); }
-}
-
-/* ----- Title (centre) ----------------------------------------------------- */
+/* ----- Title : HERO centre, plein --t-hero (160px max a 1920) ------------ */
 
 .step-A1__title {
   font-family: var(--display);
-  font-size: clamp(44px, 4.2vw, 64px);
+  font-size: var(--t-hero);
   font-weight: 900;
   letter-spacing: -0.01em;
   line-height: 1;
@@ -74,64 +50,96 @@ const STYLES = `
   justify-self: center;
 }
 
-/* ----- Input (centre) ----------------------------------------------------- */
+/* ----- Input mega centre (utilise les defauts shared, juste largeur) ----- */
 
 .step-A1__input-wrap {
-  width: min(640px, 60vw);
+  width: min(720px, 60vw);
   justify-self: center;
 }
 
 .step-A1__input {
   text-align: center;
-  font-size: clamp(22px, 1.9vw, 30px);
-  padding: 30px var(--s-3);
 }
 
-/* ----- Cloud-area : cloud centre, tuko + compteur en absolute sur le frame */
+/* ----- Cloud-area : zone OUVERTE (pas de cadre paper), relative pour ----- */
+/* poser tuko (gauche) et compteur (droite) en debord. Chips flottent dans  */
+/* le centre, le tout dans le 1fr du grid parent.                          */
 
 .step-A1__cloud-area {
-  display: flex;
-  justify-content: center;
-  align-items: stretch;
-  min-height: 0;
+  position: relative;
   width: 100%;
-  height: 80%;
+  min-height: 0;
 }
 
-/* Frame autour du cloud : permet de poser tuko (gauche) et compteur (droite)
-   en absolute relatifs au cloud, soit en debord au-dessus, soit poses sur
-   le bord superieur du cloud. Le cloud (z-index 2) passe devant. */
-.step-A1__cloud-frame {
-  position: relative;
-  width: min(1700px, 100%);
-  height: 100%;
-  min-height: 0;
+/* ----- Tuko : debord gauche, pose sur la zone chips, gros pour projection */
+
+.step-A1__tuko {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  --tuko-mascotte-size: clamp(180px, 14vw, 240px);
+  background: url('assets/sprites/tuko_spectate.png') center / contain no-repeat !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  animation: a1-tuko-bobbing 2.4s ease-in-out infinite !important;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.step-A1__tuko::before,
+.step-A1__tuko::after {
+  content: none !important;
+  display: none !important;
+}
+
+@keyframes a1-tuko-bobbing {
+  0%, 100% { transform: translate(0, calc(-50% + 0px))  rotate(-2deg); }
+  50%      { transform: translate(0, calc(-50% - 6px))  rotate(2deg); }
+}
+
+/* ----- Compteur : debord droite, gros et lisible pour projection --------- */
+
+.step-A1__counter {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: var(--s-1);
+  pointer-events: none;
 }
+
+.step-A1 .compteur-geant__value {
+  font-size: var(--t-hero); /* aussi enorme que le titre, repere central */
+  color: var(--ink);
+  line-height: 1;
+}
+
+.step-A1 .compteur-geant__label {
+  font-size: var(--t-body);
+  color: var(--ink);
+  opacity: 0.7;
+  letter-spacing: 0.2em;
+}
+
+/* ----- Cloud : flex-wrap centre, padding lateral pour laisser tuko/cpt --- */
 
 .step-A1__cloud {
-  position: relative;
-  z-index: 2; /* devant le tuko (z-index 1) */
-  width: 100%;
-  flex: 1;
-  min-height: 0;
-  background: var(--paper);
-  border: var(--border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-lg);
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s-2);
+  gap: var(--s-1) var(--s-2);
   justify-content: center;
   align-content: center;
-  padding: var(--s-3) var(--s-4);
-  overflow-y: auto;
-  overflow-x: hidden;
+  padding: 0 320px; /* zone resserree centree, place tuko + compteur en debord */
+  overflow: visible;
 }
-
-.step-A1__cloud::-webkit-scrollbar { width: 8px; }
-.step-A1__cloud::-webkit-scrollbar-thumb { background: var(--ink); border-radius: 4px; opacity: 0.3; }
 
 .step-A1__cloud-empty {
   position: absolute;
@@ -149,16 +157,17 @@ const STYLES = `
   padding: var(--s-3);
 }
 
-/* ----- Chips : couleur aleatoire parmi 4 accents Wubo --------------------- */
+/* ----- Chips : palette Wubo + flottement permanent ----------------------- */
+/* Border/shadow/font-family viennent de .chip. On override font-size,    */
+/* padding et line-height pour caser 25 chips a 1920x1080 sans debord.   */
 
 .step-A1__chip {
   --rot: 0deg;
   --float-delay: 0s;
-  font-size: clamp(20px, 1.6vw, 28px);
-  padding: 10px var(--s-3);
-  border: var(--border);
-  box-shadow: var(--shadow-sm);
-  /* background + color setes inline par renderChip() depuis CHIP_COLORS */
+  font-size: 56px;
+  line-height: 1;
+  padding: 6px var(--s-3);
+  /* background + color inline par renderChip() depuis CHIP_COLORS */
   animation-name: a1-chip-pop, a1-chip-float;
   animation-duration: 320ms, 3.6s;
   animation-timing-function: var(--ease-bounce), ease-in-out;
@@ -184,7 +193,7 @@ const STYLES = `
 
 @keyframes a1-chip-float {
   0%, 100% { transform: rotate(var(--rot))              translateY(0); }
-  50%      { transform: rotate(calc(var(--rot) + 2deg)) translateY(-5px); }
+  50%      { transform: rotate(calc(var(--rot) + 2deg)) translateY(-6px); }
 }
 
 @keyframes a1-chip-leave {
@@ -192,45 +201,15 @@ const STYLES = `
   100% { opacity: 0; transform: rotate(var(--rot)) scale(0.4); }
 }
 
-/* ----- Compteur : pose sur le bord superieur droit du cloud (symetrique tuko) */
-
-.step-A1__counter {
-  position: absolute;
-  top: 7px;
-  right: var(--s-3);
-  z-index: 1; /* derriere le cloud, comme tuko */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  pointer-events: none;
-}
-
-.step-A1 .compteur-geant__value {
-  font-size: clamp(48px, 4.4vw, 72px);
-  color: var(--ink);
-  line-height: 1;
-}
-
-.step-A1 .compteur-geant__label {
-  font-size: var(--t-small);
-  color: var(--ink);
-  opacity: 0.65;
-  letter-spacing: 0.18em;
-}
-
 /* ----- CTA (centre, non anime) -------------------------------------------- */
 
 .step-A1__cta-area {
   display: grid;
   justify-items: center;
-  margin-top: var(--s-3); /* +24px d'air entre le cloud et le CTA */
 }
 
 .step-A1__cta {
   animation: none !important;
-  font-size: clamp(28px, 2.4vw, 40px);
-  padding: 12px var(--s-5);
 }
 
 /* ----- Sas de bascule (countdown + flash) --------------------------------- */
@@ -242,7 +221,7 @@ const STYLES = `
   background: var(--ink);
   color: var(--paper);
   font-family: var(--display);
-  font-size: clamp(180px, 22vw, 280px);
+  font-size: clamp(180px, 22vw, 320px);
   font-weight: 900;
   z-index: 50;
   opacity: 0;
@@ -359,19 +338,17 @@ export default {
     inputWrap.appendChild(input);
     wrap.appendChild(inputWrap);
 
-    // ----- Cloud-area : cloud-frame centre. Tuko (gauche) et compteur ----
-    // (droite) sont en absolute dans le frame, poses sur le bord du cloud.
+    // ----- Cloud-area : zone OUVERTE relative. Tuko (gauche) et compteur
+    // (droite) en absolute en debord. Chips flottent dans le centre, pas
+    // de cadre paper qui les enferme.
     const cloudArea = document.createElement('div');
     cloudArea.className = 'step-A1__cloud-area';
-
-    const cloudFrame = document.createElement('div');
-    cloudFrame.className = 'step-A1__cloud-frame';
 
     const tuko = document.createElement('div');
     tuko.className = 'tuko-mascotte step-A1__tuko';
     tuko.setAttribute('data-pose', 'spectateur');
     tuko.setAttribute('data-position', 'inline');
-    cloudFrame.appendChild(tuko);
+    cloudArea.appendChild(tuko);
 
     const counter = document.createElement('div');
     counter.className = 'compteur-geant step-A1__counter';
@@ -381,9 +358,9 @@ export default {
     counter.appendChild(counterValue);
     const counterLabel = document.createElement('div');
     counterLabel.className = 'compteur-geant__label';
-    counterLabel.textContent = 'eleves';
+    counterLabel.textContent = 'élèves';
     counter.appendChild(counterLabel);
-    cloudFrame.appendChild(counter);
+    cloudArea.appendChild(counter);
 
     const cloud = document.createElement('div');
     cloud.className = 'step-A1__cloud';
@@ -393,9 +370,7 @@ export default {
     cloudEmpty.textContent = '...';
     cloud.appendChild(cloudEmpty);
 
-    cloudFrame.appendChild(cloud);
-    cloudArea.appendChild(cloudFrame);
-
+    cloudArea.appendChild(cloud);
     wrap.appendChild(cloudArea);
 
     // ----- CTA (centre, non anime) ----------------------------------------

@@ -30,26 +30,30 @@ let currentSlide = 1;
 let votes = { 1: 0, 2: 0, 3: 0, 4: 0 };
 let cardClickHistory = { 1: [], 2: [], 3: [], 4: [] };
 
+// Idees autour de "Argibi = lampe controlee avec du binaire".
+// La BONNE reponse est #1 (image argibi.png). Les autres sont des fausses
+// pistes amusantes pour faire debattre la classe.
 const OPTIONS = [
-  { id: 1, label: 'UNE LAMPE\nQUI DANSE',  image: 'lampe stylisee qui danse' },
-  { id: 2, label: 'UN ROBOT\nMALIN',       image: 'petit robot avec engrenages' },
-  { id: 3, label: 'UN DECODEUR\nSECRET',   image: 'message binaire et code' },
-  { id: 4, label: 'UNE TELE\nMINIATURE',   image: 'mini-tele avec image' },
+  { id: 1, label: 'UN MESSAGE EN LUMIÈRE',     img: 'assets/sprites/B3/argibi.png' },
+  { id: 2, label: 'UN ROBOT FARCEUR',          img: 'assets/sprites/B3/robot_farceur.png' },
+  { id: 3, label: 'UN DÉTECTEUR DE MENSONGES', img: 'assets/sprites/B3/detecteur_mensonges.png' },
+  { id: 4, label: 'UNE MINI-CONSOLE DE JEU',   img: 'assets/sprites/B3/mini_console.png' },
 ];
 
-const MAX_BAR_VOTES = 20;
+// Jauge se remplit a 20% par vote (5 clics = pleine). Avant : 20 votes
+// pour pleine → invisible a 1 vote, donnait l'impression que rien ne se
+// passait au clic.
+const MAX_BAR_VOTES = 5;
 
 let slide1El = null;
 let slide2El = null;
-let argibiPlaceholderEl = null;
+let tukoRewardEl = null;
 let cardsEl = {};
 let counterEl = {};
 let barFillEl = {};
 let comboEl = {};
 let cta2El = null;
-let tuko1El = null;
 let tuko2El = null;
-let argibiBadgeEl = null;
 
 export default {
   id: 'B3',
@@ -140,15 +144,13 @@ export default {
     cardClickHistory = { 1: [], 2: [], 3: [], 4: [] };
     slide1El = null;
     slide2El = null;
-    argibiPlaceholderEl = null;
+    tukoRewardEl = null;
     cardsEl = {};
     counterEl = {};
     barFillEl = {};
     comboEl = {};
     cta2El = null;
-    tuko1El = null;
     tuko2El = null;
-    argibiBadgeEl = null;
   },
 
   serialize() {
@@ -168,28 +170,22 @@ function buildSlide1(wrap) {
   const slide = document.createElement('section');
   slide.className = 'step-B3__slide step-B3__slide--1';
 
-  const argibi = document.createElement('div');
-  argibi.className = 'step-B3__argibi placeholder-image';
-  argibi.textContent = 'argibi monte, vue 3D legere rotation';
-  slide.appendChild(argibi);
-  argibiPlaceholderEl = argibi;
+  const tukoReward = document.createElement('img');
+  tukoReward.className = 'step-B3__tuko-reward';
+  tukoReward.src = 'assets/sprites/tuko_reward.png';
+  tukoReward.alt = '';
+  slide.appendChild(tukoReward);
+  tukoRewardEl = tukoReward;
 
   const titre = document.createElement('h1');
   titre.className = 'titre-hero step-B3__titre1';
-  titre.textContent = 'TA CAPSULE EST MONTEE !';
+  titre.textContent = 'TA CAPSULE EST MONTÉE !';
   slide.appendChild(titre);
-
-  const tuko = document.createElement('div');
-  tuko.className = 'tuko-mascotte';
-  tuko.dataset.pose = 'triomphe';
-  tuko.dataset.position = 'bas-gauche';
-  slide.appendChild(tuko);
-  tuko1El = tuko;
 
   const cta = document.createElement('button');
   cta.type = 'button';
   cta.className = 'cta-primary step-B3__cta1';
-  cta.textContent = 'alors, ca sert a quoi ?';
+  cta.textContent = 'alors, ça sert à quoi ?';
   slide.appendChild(cta);
 
   const onClick = () => bascule12();
@@ -203,17 +199,16 @@ function buildSlide1(wrap) {
 function showSlide1() {
   slide1El.classList.add('is-active');
   slide2El.classList.remove('is-active');
-  argibiPlaceholderEl.classList.add('step-B3__argibi--rotating');
+  tukoRewardEl.classList.add('step-B3__tuko-reward--bobbing');
 
-  // Etincelles cyan continues autour de l'Argibi (helper partage ).
   if (stopSparkles) stopSparkles();
-  stopSparkles = spawnEtincelles(argibiPlaceholderEl, { duree: 0, densite: 'normale' });
+  stopSparkles = spawnEtincelles(tukoRewardEl, { duree: 0, densite: 'normale' });
 }
 
 function bascule12() {
   if (currentSlide !== 1) return;
   currentSlide = 2;
-  argibiPlaceholderEl.classList.add('step-B3__argibi--shrinking');
+  tukoRewardEl.classList.add('step-B3__tuko-reward--shrinking');
   slide1El.classList.add('is-leaving');
   if (stopSparkles) { stopSparkles(); stopSparkles = null; }
   const t = setTimeout(() => {
@@ -249,13 +244,19 @@ function buildSlide2(wrap) {
 
   OPTIONS.forEach((opt, i) => {
     const card = document.createElement('div');
-    card.className = 'card-clickable step-B3__card';
+    // Pas de .card-clickable (composant shared) : ses styles
+    // hover/is-active interferent et donnent l'impression que la
+    // card "disparait" au clic. On garde uniquement le scope local.
+    card.className = 'step-B3__card';
     card.style.setProperty('--rot', (i % 2 === 0 ? -1 : 1) + 'deg');
     card.dataset.opt = String(opt.id);
 
-    const image = document.createElement('div');
-    image.className = 'placeholder-image step-B3__card-image';
-    image.textContent = opt.image;
+    // Vraie image (Taki a fourni les 4 illus dans assets/sprites/B3/)
+    const image = document.createElement('img');
+    image.className = 'step-B3__card-image';
+    image.src = opt.img;
+    image.alt = opt.label.replace('\n', ' ');
+    image.loading = 'lazy';
     card.appendChild(image);
 
     const barWrap = document.createElement('div');
@@ -277,10 +278,7 @@ function buildSlide2(wrap) {
 
     const label = document.createElement('div');
     label.className = 'step-B3__label';
-    opt.label.split('\n').forEach((line, idx) => {
-      if (idx > 0) label.appendChild(document.createElement('br'));
-      label.appendChild(document.createTextNode(line));
-    });
+    label.textContent = opt.label;
     card.appendChild(label);
 
     const combo = document.createElement('span');
@@ -289,7 +287,8 @@ function buildSlide2(wrap) {
     comboEl[opt.id] = combo;
 
     const onClick = (e) => {
-      sendRipple(card, e);
+      // Pas de ripple violet 160px qui couvre la card (donnait
+      // l'impression qu'elle disparaissait). Juste le vote + le bump.
       addVote(opt.id, 1);
     };
     const onContext = (e) => {
@@ -305,16 +304,13 @@ function buildSlide2(wrap) {
     cardsEl[opt.id] = card;
   });
 
-  const badge = document.createElement('div');
-  badge.className = 'step-B3__argibi-badge';
-  badge.textContent = 'argibi';
-  slide.appendChild(badge);
-  argibiBadgeEl = badge;
+  // Pas de argibi-badge en haut-droite (retire sur demande Taki)
 
-  const tuko = document.createElement('div');
-  tuko.className = 'tuko-mascotte';
-  tuko.dataset.pose = 'presentateur';
-  tuko.dataset.position = 'bas-gauche';
+  // Tuko_spectate en bas-gauche slide 2 (sprite reel, pas placeholder)
+  const tuko = document.createElement('img');
+  tuko.className = 'step-B3__tuko-spectate';
+  tuko.src = 'assets/sprites/tuko_spectate.png';
+  tuko.alt = '';
   slide.appendChild(tuko);
   tuko2El = tuko;
 
@@ -387,6 +383,7 @@ function renderVotes() {
     const v = votes[opt.id] || 0;
 
     counter.textContent = String(v);
+    counter.classList.toggle('has-votes', v > 0);
 
     const ratio = Math.min(1, v / MAX_BAR_VOTES);
     fill.style.transform = `scaleY(${ratio})`;
@@ -531,28 +528,31 @@ function injectStyles() {
       grid-template-rows: 1fr auto auto;
       align-items: center;
       justify-items: center;
-      gap: var(--s-4);
-      padding: var(--s-6);
+      gap: var(--s-3);
+      padding: var(--s-3) var(--s-5) var(--s-8);
       text-align: center;
     }
 
-    .step-B3__argibi {
-      width: min(420px, 36vw);
-      height: min(420px, 36vw);
+    .step-B3__tuko-reward {
+      width: auto;
+      height: min(520px, 54vh);
+      max-width: 85vw;
+      object-fit: contain;
       transform: scale(0);
-      animation: stepB3-argibi-pop var(--d-normal) var(--ease-bounce) 100ms forwards;
-      box-shadow: var(--shadow-accent-1);
+      pointer-events: none;
+      animation: stepB3-tuko-reward-pop var(--d-normal) var(--ease-bounce) 100ms forwards;
     }
-    .step-B3__argibi--rotating {
-      animation: stepB3-argibi-pop var(--d-normal) var(--ease-bounce) 100ms forwards,
-                 stepB3-argibi-rotate 6s linear 600ms infinite,
-                 stepB3-argibi-glow 2s ease-in-out 600ms infinite;
+    .step-B3__tuko-reward--bobbing {
+      animation: stepB3-tuko-reward-pop var(--d-normal) var(--ease-bounce) 100ms forwards,
+                 stepB3-tuko-reward-bobbing 2.4s ease-in-out 600ms infinite;
     }
-    .step-B3__argibi--shrinking {
-      animation: stepB3-argibi-shrink var(--d-fast) var(--ease-out) forwards;
+    .step-B3__tuko-reward--shrinking {
+      animation: stepB3-tuko-reward-shrink var(--d-fast) var(--ease-out) forwards;
     }
 
     .step-B3__titre1 {
+      font-size: clamp(48px, 4.5vw, 72px);
+      white-space: nowrap;
       opacity: 0;
       transform: scale(0);
       animation: stepB3-titre-smash var(--d-normal) var(--ease-bounce) 500ms forwards;
@@ -587,16 +587,29 @@ function injectStyles() {
       display: grid;
       grid-template-rows: 1fr auto auto auto;
       gap: var(--s-2);
-      padding: var(--s-2);
-      transform: scale(0) rotate(var(--rot, 0deg));
+      padding: var(--s-3);
+      /* Design card neo-brutaliste (intégré sans dépendre de .card-clickable) */
+      background: var(--paper);
+      border: var(--border);
+      box-shadow: var(--shadow);
+      border-radius: var(--r-md);
+      color: var(--ink);
+      cursor: var(--cursor-pointer);
+      /* Etat initial : invisible et compact, jusqu'a is-shown. */
       opacity: 0;
-      transition: transform var(--d-normal) var(--ease-out),
-                  box-shadow var(--d-fast) var(--ease-out);
+      transform: scale(0) rotate(var(--rot, 0deg));
+      transition: box-shadow var(--d-fast) var(--ease-out);
       position: relative;
       overflow: hidden;
     }
+    /* Etat post-animation : opacity ET transform fixes en CSS, PAS via
+       animation forwards. Si on laissait l'animation pop "forwards", les
+       animations is-bumping / is-leader qui n'incluent pas opacity dans
+       leurs keyframes ramèneraient l'opacity au state CSS de base (0). */
     .step-B3__card.is-shown {
-      animation: stepB3-card-pop var(--d-normal) var(--ease-bounce) forwards;
+      opacity: 1;
+      transform: scale(1) rotate(var(--rot, 0deg));
+      animation: stepB3-card-pop var(--d-normal) var(--ease-bounce);
     }
     .step-B3__card.is-bumping {
       animation: stepB3-card-bump var(--d-fast) var(--ease-bounce);
@@ -613,32 +626,36 @@ function injectStyles() {
     }
 
     .step-B3__card-image {
-      min-height: 130px;
+      width: 100%;
+      height: clamp(140px, 16vh, 200px);
+      object-fit: contain;
+      background: var(--paper);
+      display: block;
+      pointer-events: none;
     }
 
     .step-B3__bar-wrap {
       display: grid;
       place-items: center;
-      height: 110px;
+      height: 180px;
     }
     .step-B3__bar-track {
-      width: 36px;
+      width: 80px;
       height: 100%;
       background: var(--bg-2);
-      border: var(--border-thin);
-      border-radius: var(--r-sm);
+      border: var(--border);
+      border-radius: var(--r-md);
       position: relative;
       overflow: hidden;
+      box-shadow: var(--shadow);
     }
     .step-B3__bar-fill {
       position: absolute;
       inset: 0;
-      background: repeating-linear-gradient(
+      background: linear-gradient(
         to top,
-        var(--accent-3) 0,
-        var(--accent-3) 10px,
-        var(--ink) 10px,
-        var(--ink) 12px
+        var(--accent-1) 0%,
+        color-mix(in srgb, var(--accent-1) 80%, var(--accent-3)) 100%
       );
       transform-origin: bottom center;
       transform: scaleY(0);
@@ -647,10 +664,17 @@ function injectStyles() {
 
     .step-B3__counter {
       font-family: var(--display);
-      font-size: var(--t-h1);
+      font-size: clamp(64px, 6vw, 96px);
       font-weight: 900;
       line-height: 1;
-      transition: transform var(--d-fast) var(--ease-bounce);
+      color: var(--ink);
+      transition: transform var(--d-fast) var(--ease-bounce),
+                  color var(--d-fast) var(--ease-out);
+    }
+    /* Compteur en violet (CTA color) quand au moins 1 vote :
+       feedback fort que le clic a bien incremente. */
+    .step-B3__counter.has-votes {
+      color: var(--accent-1);
     }
     .step-B3__counter.is-pulsing {
       animation: stepB3-counter-pulse var(--d-fast) var(--ease-bounce);
@@ -658,11 +682,13 @@ function injectStyles() {
 
     .step-B3__label {
       font-family: var(--display);
-      font-size: var(--t-body-xl);
+      font-size: clamp(20px, 1.8vw, 28px);
       font-weight: 900;
-      line-height: 1.05;
+      line-height: 1.1;
       text-transform: uppercase;
       text-align: center;
+      text-wrap: balance;
+      word-break: break-word;
     }
 
     .step-B3__combo {
@@ -693,40 +719,40 @@ function injectStyles() {
       animation: stepB3-ripple 600ms var(--ease-out) forwards;
     }
 
-    .step-B3__argibi-badge {
-      position: absolute;
-      top: var(--s-2);
-      right: var(--s-3);
-      width: 80px;
-      height: 80px;
-      display: grid;
-      place-items: center;
-      font-family: var(--mono);
-      font-size: var(--t-tiny);
-      letter-spacing: 0.16em;
-      color: var(--ink);
-      background: var(--paper);
-      border: var(--border);
-      box-shadow: var(--shadow-sm);
-      border-radius: var(--r-md);
-      animation: stepB3-argibi-rotate 6s linear infinite;
-      transform-origin: center;
-    }
-
     .step-B3__cta2 {
       justify-self: center;
     }
 
     .step-B3__sous2 { margin: 0; }
 
-    /* Override de l'anim partagee de .tuko-mascotte pendant 500ms : on stoppe
-       l'animation pour pouvoir appliquer un transform inline (rotation tete). */
-    .step-B3 .tuko-mascotte.is-looking {
+    /* Tuko en bas-gauche : réduit pour ne PAS masquer la card 1.
+       Avant : clamp(280, 28vw, 400) → couvrait 266px de la card 1.
+       Maintenant : clamp(180, 14vw, 220) → 220px max + left: 0 = bord droit
+       à 220, card 1 commence à ~203 → overlap ~17px tolérable, et z-index 1
+       pour passer derrière les cards visuellement si overlap. */
+    .step-B3__tuko-spectate {
+      position: absolute;
+      bottom: var(--s-3);
+      left: 0;
+      width: clamp(180px, 14vw, 220px);
+      height: auto;
+      pointer-events: none;
+      animation: stepB3-tuko-bobbing 2.4s ease-in-out infinite;
+      z-index: 1;
+    }
+    .step-B3__card { z-index: 2; } /* devant Tuko en cas d'overlap */
+
+    .step-B3__tuko-spectate.is-looking {
       animation: none;
       transition: transform var(--d-fast) var(--ease-out);
     }
-    .step-B3 .tuko-mascotte.is-celebrating {
+    .step-B3__tuko-spectate.is-celebrating {
       animation: stepB3-tuko-celebrate 600ms var(--ease-bounce) forwards;
+    }
+
+    @keyframes stepB3-tuko-bobbing {
+      0%, 100% { transform: translateY(0)    rotate(-2deg); }
+      50%      { transform: translateY(-6px) rotate(2deg); }
     }
 
     .step-B3__flash {
@@ -741,20 +767,16 @@ function injectStyles() {
       animation: stepB3-flash 350ms ease-out forwards;
     }
 
-    @keyframes stepB3-argibi-pop {
+    @keyframes stepB3-tuko-reward-pop {
       0%   { opacity: 0; transform: scale(0); }
-      60%  { opacity: 1; transform: scale(1.15); }
+      60%  { opacity: 1; transform: scale(1.12); }
       100% { opacity: 1; transform: scale(1); }
     }
-    @keyframes stepB3-argibi-rotate {
-      0%   { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    @keyframes stepB3-tuko-reward-bobbing {
+      0%, 100% { transform: translateY(0)    scale(1); }
+      50%      { transform: translateY(-10px) scale(1.02); }
     }
-    @keyframes stepB3-argibi-glow {
-      0%, 100% { box-shadow: var(--shadow-accent-1); }
-      50%      { box-shadow: 0 0 0 6px var(--accent-1), var(--shadow-accent-1); }
-    }
-    @keyframes stepB3-argibi-shrink {
+    @keyframes stepB3-tuko-reward-shrink {
       to { transform: scale(0.2); opacity: 0; }
     }
     @keyframes stepB3-titre-smash {

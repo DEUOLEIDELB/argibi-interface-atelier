@@ -84,7 +84,7 @@ const CSS = `
   align-items: center;
   justify-items: center;
   gap: var(--s-4);
-  padding: var(--s-6) var(--s-6);
+  padding: var(--s-6) var(--s-6) var(--s-8);
   background: var(--bg);
 }
 
@@ -144,32 +144,6 @@ const CSS = `
   50%      { transform: scale(1.015); }
 }
 
-/* Argibi placeholder + matrice qui respire. */
-.step-F2__argibi {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-3);
-  background: var(--paper);
-  border: var(--border);
-  box-shadow: var(--shadow-lg);
-  border-radius: var(--r-lg);
-}
-
-.step-F2__argibi-label {
-  font-family: var(--mono);
-  font-size: var(--t-small);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--accent-2);
-}
-
-/* Tuko inline (a cote de l'Argibi) — surcharge data-pose="presentateur". */
-.step-F2__hero-tuko {
-  --tuko-mascotte-size: 200px;
-}
-
 /* Question oralisee. */
 .step-F2__qwrap {
   display: flex;
@@ -182,28 +156,18 @@ const CSS = `
 
 .step-F2__question {
   font-family: var(--display);
-  font-size: var(--t-h2);
+  font-size: clamp(28px, 2.4vw, 40px);
   font-weight: 600;
   font-style: italic;
   color: var(--ink);
+  white-space: nowrap;
+  margin: 0;
   opacity: 0;
   animation: f2-fade-in var(--d-slow) var(--ease-out) var(--d-hero) forwards;
-  transition: opacity var(--d-slow) var(--ease-out);
 }
-
-.step-F2__question.is-fading { opacity: 0; }
 
 @keyframes f2-fade-in {
   to { opacity: 1; }
-}
-
-.step-F2__qhint {
-  font-family: var(--mono);
-  font-size: var(--t-tiny);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink);
-  opacity: 0.45;
 }
 
 /* Zone bottom : CTA + bouton rapport. */
@@ -242,22 +206,6 @@ const CSS = `
 .step-F2__report-btn:hover {
   background: var(--ink);
   color: var(--paper);
-}
-
-/* Tuko bas-gauche — surcharges minimes du composant partage. */
-.step-F2__tuko-bg {
-  z-index: 3;
-}
-
-.step-F2__tuko-bg.is-listening {
-  animation: f2-tuko-listen var(--d-hero) var(--ease-bounce);
-}
-
-@keyframes f2-tuko-listen {
-  0%   { transform: translateY(0) rotate(0); }
-  30%  { transform: translateY(-16px) rotate(8deg); }
-  60%  { transform: translateY(-12px) rotate(8deg); }
-  100% { transform: translateY(0) rotate(0); }
 }
 
 /* Overlay rapport — step-local, modale simple. */
@@ -672,41 +620,20 @@ export default {
 
     root.appendChild(head);
 
-    // Hero : Argibi monte (avec matrice) + Tuko a cote.
+    // Hero : juste la matrice qui respire (sans card argibi, sans Tuko presentateur).
     const heroWrap = document.createElement('div');
     heroWrap.className = 'step-F2__hero-wrap';
-
-    const argibi = document.createElement('div');
-    argibi.className = 'step-F2__argibi';
-    const argibiLabel = document.createElement('span');
-    argibiLabel.className = 'step-F2__argibi-label';
-    argibiLabel.textContent = 'Argibi · monté';
-    argibi.appendChild(argibiLabel);
-    const matrice = buildMatrice(argibi);
-    heroWrap.appendChild(argibi);
-
-    const heroTuko = document.createElement('div');
-    heroTuko.className = 'tuko-mascotte step-F2__hero-tuko';
-    heroTuko.setAttribute('data-pose', 'presentateur');
-    heroTuko.setAttribute('data-position', 'inline');
-    heroTuko.setAttribute('aria-label', 'Tuko fier');
-    heroWrap.appendChild(heroTuko);
-
+    const matrice = buildMatrice(heroWrap);
     root.appendChild(heroWrap);
 
-    // Question oralisee + rappel mode oral.
+    // Question unique sur une ligne (plus de hint, plus de cycle).
     const qWrap = document.createElement('div');
     qWrap.className = 'step-F2__qwrap';
 
     const question = document.createElement('p');
     question.className = 'step-F2__question';
-    question.textContent = QUESTIONS[0];
+    question.textContent = '« qu’avez-vous préféré ? · ce qui vous a surpris ? »';
     qWrap.appendChild(question);
-
-    const qHint = document.createElement('span');
-    qHint.className = 'step-F2__qhint';
-    qHint.textContent = 'l\'animateur pose les questions à voix haute';
-    qWrap.appendChild(qHint);
 
     root.appendChild(qWrap);
 
@@ -728,13 +655,7 @@ export default {
 
     root.appendChild(bottom);
 
-    // Tuko bas-gauche : Tuko qui ecoute.
-    const tukoBg = document.createElement('div');
-    tukoBg.className = 'tuko-mascotte step-F2__tuko-bg';
-    tukoBg.setAttribute('data-pose', 'stop');
-    tukoBg.setAttribute('data-position', 'bas-gauche');
-    tukoBg.setAttribute('aria-label', 'Tuko qui écoute');
-    root.appendChild(tukoBg);
+    // (Tuko bas-gauche retire sur demande Taki.)
 
     // Overlay rapport (step-local, monte separement sur body pour ne pas etre
     // soumis aux transformations du shell).
@@ -745,10 +666,9 @@ export default {
     stage.appendChild(root);
     domNodes.push(root);
 
-    // Cycles auto.
-    startQuestionCycle(question);
+    // Cycles auto (plus de earPose : pas de Tuko bas-gauche).
     startPatternCycle(matrice.pixels);
-    startEarPoseCycle(tukoBg);
+    void question; // question fixe, plus de cycle
 
     // Listeners.
     const onClose = () => {

@@ -1,10 +1,7 @@
 // B1-preparation-assemblage.js - Page tampon avant les 15 etapes.
-// Source : doc interne.
-//
-// Page d'animateur. Aucune interaction enfant. Une respiration : titre,
-// image-placeholder du poste range, une ligne de consigne, Tuko hote
-// bas-gauche, CTA "ON COMMENCE". L'animateur clique quand la classe est prete.
-// utilise .tuko-mascotte  au lieu d'une version locale.
+// Titre "ASSEMBLAGE" + tuko_excitate en grand au centre + consigne sous tuko
+// + CTA "ON COMMENCE" en bas (convention CTA bottom 128px du footer).
+// Cf. doc interne.
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';
@@ -42,37 +39,36 @@ export default {
     domNodes.push(wrap);
 
     const titre = document.createElement('h1');
-    titre.className = 'titre-hero step-B1__titre';
-    titre.textContent = 'ON ASSEMBLE TA CAPSULE';
+    titre.className = 'step-B1__titre';
+    titre.textContent = 'ASSEMBLAGE';
     wrap.appendChild(titre);
 
-    const image = document.createElement('div');
-    image.className = 'placeholder-image step-B1__image';
-    image.textContent = 'poste de travail range : sachets A et B separes, carte au centre';
-    wrap.appendChild(image);
+    const tukoWrap = document.createElement('div');
+    tukoWrap.className = 'step-B1__tuko-wrap';
+    const tukoImg = document.createElement('img');
+    tukoImg.className = 'step-B1__tuko';
+    tukoImg.src = 'assets/sprites/tuko_excitate.png';
+    tukoImg.alt = 'Tuko enthousiaste';
+    tukoWrap.appendChild(tukoImg);
+    wrap.appendChild(tukoWrap);
 
     const consigne = document.createElement('p');
-    consigne.className = 'sous-titre step-B1__consigne';
-    consigne.textContent = 'sors tout devant toi : garde A et B separes';
+    consigne.className = 'step-B1__consigne';
+    consigne.textContent = 'Sors tout devant toi.';
     wrap.appendChild(consigne);
 
-    // Tuko mascotte partagee  : posture pedagogique en bas-gauche.
-    const tuko = document.createElement('div');
-    tuko.className = 'tuko-mascotte';
-    tuko.dataset.pose = 'pedagogique';
-    tuko.dataset.position = 'bas-gauche';
-    wrap.appendChild(tuko);
-
+    const ctaArea = document.createElement('div');
+    ctaArea.className = 'step-B1__cta-area';
     const cta = document.createElement('button');
     cta.type = 'button';
     cta.className = 'cta-primary step-B1__cta';
-    cta.textContent = 'on commence';
-    wrap.appendChild(cta);
+    cta.textContent = 'ON COMMENCE';
+    ctaArea.appendChild(cta);
+    wrap.appendChild(ctaArea);
 
     const advance = () => {
       if (cta.disabled) return;
       cta.disabled = true;
-      cta.classList.add('is-flashing');
       const t = setTimeout(() => {
         navAPIRef?.markComplete?.();
         navAPIRef?.next?.();
@@ -82,9 +78,8 @@ export default {
     cta.addEventListener('click', advance);
     handlers.push([cta, 'click', advance]);
 
-    // Raccourci Espace (cf. fiche § Technique).
     const onKey = (e) => {
-      if (e.code === 'Space') {
+      if (e.code === 'Space' || e.key === 'ArrowRight') {
         e.preventDefault();
         advance();
       }
@@ -92,7 +87,6 @@ export default {
     window.addEventListener('keydown', onKey);
     handlers.push([window, 'keydown', onKey]);
 
-    // Persistance : flag viewed des l'entree (page tampon, completion immediate).
     saveStepState('B1', { viewed: true });
 
     void savedState;
@@ -101,21 +95,16 @@ export default {
   exit() {
     handlers.forEach(([target, event, fn]) => target.removeEventListener(event, fn));
     handlers = [];
-
     timers.forEach(clearTimeout);
     timers = [];
-
     tickerFns.forEach(fn => app.ticker.remove(fn));
     tickerFns = [];
-
     domNodes.forEach(n => n.remove());
     domNodes = [];
-
     if (scene) {
       scene.destroy({ children: true });
       scene = null;
     }
-
     navAPIRef = null;
   },
 
@@ -128,8 +117,6 @@ export default {
   },
 
   replay() {
-    // Re-execute juste l'animation principale : on retire les nodes et relance
-    // enter() via le shell (le shell appelle exit() + enter() au resetCurrentStep).
     this.exit();
   },
 };
@@ -144,46 +131,89 @@ function injectStyles() {
       grid-template-rows: auto 1fr auto auto;
       align-items: center;
       justify-items: center;
-      gap: var(--s-5);
-      padding: var(--s-6);
+      gap: var(--s-3);
+      padding: var(--s-3) var(--s-5) var(--s-8) var(--s-5);
       text-align: center;
+      background: var(--bg);
+      overflow: hidden;
     }
 
+    /* ----- Titre HERO --------------------------------------------------- */
+
     .step-B1__titre {
+      font-family: var(--display);
+      font-size: clamp(72px, 7vw, 128px);
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      line-height: 1;
+      text-transform: uppercase;
+      color: var(--ink);
+      margin: 0;
       opacity: 0;
       transform: scale(0);
       animation: stepB1-titre-smash var(--d-normal) var(--ease-bounce) 100ms forwards;
     }
 
-    .step-B1__image {
-      width: min(720px, 60%);
-      max-height: 360px;
+    /* ----- Tuko_excitate au CENTRE en grand ----------------------------- */
+
+    .step-B1__tuko-wrap {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
       opacity: 0;
       transform: translateY(20px);
       animation: stepB1-fade-in var(--d-slow) var(--ease-out) 350ms forwards,
-                 stepB1-bobbing 3s ease-in-out 950ms infinite;
+                 stepB1-bobbing 2.4s ease-in-out 950ms infinite;
     }
 
+    .step-B1__tuko {
+      max-height: 100%;
+      max-width: min(560px, 45vw);
+      height: auto;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* ----- Consigne sous tuko ------------------------------------------- */
+
     .step-B1__consigne {
+      font-family: var(--display);
+      font-size: clamp(32px, 3vw, 48px);
+      font-weight: 700;
+      line-height: 1.2;
+      text-transform: lowercase;
+      color: var(--ink);
+      margin: 0;
+      max-width: 900px;
       opacity: 0;
       transform: translateY(10px);
       animation: stepB1-fade-in var(--d-slow) var(--ease-out) 700ms forwards;
-      max-width: 900px;
+    }
+
+    /* ----- CTA (convention bottom 128px du footer, identique A1/A3/A6) -- */
+
+    .step-B1__cta-area {
+      display: grid;
+      justify-items: center;
+      margin-top: var(--s-3);
     }
 
     .step-B1__cta {
+      animation: none !important;
       opacity: 0;
       transform: translateY(10px) scale(0.95);
-      animation: stepB1-cta-in var(--d-normal) var(--ease-bounce) 950ms forwards;
     }
 
-    .step-B1__cta.is-flashing {
-      animation: stepB1-cta-flash var(--d-fast) var(--ease-out) forwards;
+    .step-B1__cta {
+      animation: stepB1-cta-in var(--d-normal) var(--ease-bounce) 950ms forwards !important;
     }
 
     @keyframes stepB1-titre-smash {
       0%   { opacity: 0; transform: scale(0); }
-      60%  { opacity: 1; transform: scale(1.2); }
+      60%  { opacity: 1; transform: scale(1.15); }
       100% { opacity: 1; transform: scale(1); }
     }
 
@@ -193,19 +223,13 @@ function injectStyles() {
 
     @keyframes stepB1-bobbing {
       0%, 100% { transform: translateY(0); }
-      50%      { transform: translateY(-5px); }
+      50%      { transform: translateY(-8px); }
     }
 
     @keyframes stepB1-cta-in {
       0%   { opacity: 0; transform: translateY(10px) scale(0.95); }
       60%  { opacity: 1; transform: translateY(0)    scale(1.05); }
       100% { opacity: 1; transform: translateY(0)    scale(1); }
-    }
-
-    @keyframes stepB1-cta-flash {
-      0%   { transform: scale(1);    box-shadow: var(--shadow-lg); }
-      40%  { transform: scale(1.06); box-shadow: 0 0 0 12px var(--accent-3); }
-      100% { transform: scale(1);    box-shadow: var(--shadow-lg); }
     }
   `;
 

@@ -25,21 +25,18 @@ let viewedSteps = new Set([1]);
 let waitTimer = null;
 
 const STEPS = [
-  { id: 1,  titre: 'ETAPE 1',  caption: 'sors le sachet A',          image: 'sachet A pose, ouvert' },
-  { id: 2,  titre: 'ETAPE 2',  caption: 'sors le sachet B',          image: 'sachet B pose, ouvert' },
-  { id: 3,  titre: 'ETAPE 3',  caption: 'pose la carte au centre',   image: 'carte electronique centree' },
-  { id: 4,  titre: 'ETAPE 4',  caption: 'visse la vis 1',            image: 'vis 1 placee, haut gauche' },
-  { id: 5,  titre: 'ETAPE 5',  caption: 'visse la vis 2',            image: 'vis 2 placee, haut droite' },
-  { id: 6,  titre: 'ETAPE 6',  caption: 'visse la vis 3',            image: 'vis 3 placee, milieu gauche' },
-  { id: 7,  titre: 'ETAPE 7',  caption: 'visse la vis 4',            image: 'vis 4 placee, milieu droite' },
-  { id: 8,  titre: 'ETAPE 8',  caption: 'visse la vis 5',            image: 'vis 5 placee, bas gauche' },
-  { id: 9,  titre: 'ETAPE 9',  caption: 'visse la vis 6',            image: 'vis 6 placee, bas droite' },
-  { id: 10, titre: 'ETAPE 10', caption: 'verifie chaque vis',        image: 'main qui verifie le serrage' },
-  { id: 11, titre: 'ETAPE 11', caption: 'place la batterie',         image: 'batterie clipsee' },
-  { id: 12, titre: 'ETAPE 12', caption: 'ferme le boitier',          image: 'boitier referme' },
-  { id: 13, titre: 'ETAPE 13', caption: 'clique le clip arriere',    image: 'clip arriere ferme' },
-  { id: 14, titre: 'ETAPE 14', caption: 'verifie le cable batterie', image: 'connecteur batterie verifie' },
-  { id: 15, titre: 'ETAPE 15', caption: 'verifie ta capsule',        image: 'argibi monte, vue finale' },
+  { id: 1,  titre: 'ÉTAPE 1',  caption: 'Prends ta carte électronique.',                  image: 'assets/sprites/B2/step_1.svg' },
+  { id: 2,  titre: 'ÉTAPE 2',  caption: 'Ouvre le sachet A, à placer en haut.',            image: 'assets/sprites/B2/step_2.svg' },
+  { id: 3,  titre: 'ÉTAPE 3',  caption: 'Ouvre le sachet CT, à placer sous le capteur.',  image: 'assets/sprites/B2/step_2bis.svg' },
+  { id: 4,  titre: 'ÉTAPE 4',  caption: 'Ouvre le sachet B, à placer en bas.',             image: 'assets/sprites/B2/step_3.svg' },
+  { id: 5,  titre: 'ÉTAPE 5',  caption: 'Plaque inférieure.',                              image: 'assets/sprites/B2/step_4.svg' },
+  { id: 6,  titre: 'ÉTAPE 6',  caption: 'Ouvre le sachet C et visse la plaque inférieure.', image: 'assets/sprites/B2/step_5.svg' },
+  { id: 7,  titre: 'ÉTAPE 7',  caption: 'Installe la plaque supérieure.',                  image: 'assets/sprites/B2/step_7.svg' },
+  { id: 8,  titre: 'ÉTAPE 8',  caption: 'Fais glisser les plaques de couleur.',            image: 'assets/sprites/B2/step_8.svg' },
+  { id: 9,  titre: 'ÉTAPE 9',  caption: 'Installe la matrice dans le support jaune.',      image: 'assets/sprites/B2/step_9.svg' },
+  { id: 10, titre: 'ÉTAPE 10', caption: 'Installe le diffuseur de la matrice.',            image: 'assets/sprites/B2/step_10.svg' },
+  { id: 11, titre: 'ÉTAPE 11', caption: 'Branche le câble et le support rose.',            image: 'assets/sprites/B2/step_11.svg' },
+  { id: 12, titre: 'ÉTAPE 12', caption: "TADA, c'est fini !",                              image: 'assets/sprites/B2/step_12.svg' },
 ];
 const TOTAL = STEPS.length;
 
@@ -115,7 +112,7 @@ export default {
         e.preventDefault();
         e.stopPropagation();
         jumpTo(10);
-      } else if (e.shiftKey && /^[1-5]$/.test(e.key)) {
+      } else if (e.shiftKey && /^[1-2]$/.test(e.key)) {
         e.preventDefault();
         e.stopPropagation();
         jumpTo(10 + parseInt(e.key, 10));
@@ -211,6 +208,8 @@ function buildBar(wrap) {
   barEl = bar;
 }
 
+let panelsWrapEl = null;
+
 function buildPanels(wrap) {
   const panelsWrap = document.createElement('div');
   panelsWrap.className = 'step-B2__panels';
@@ -223,6 +222,7 @@ function buildPanels(wrap) {
   panelsWrap.appendChild(panelsEl.center);
   panelsWrap.appendChild(panelsEl.right);
   wrap.appendChild(panelsWrap);
+  panelsWrapEl = panelsWrap;
 }
 
 function makePanel(role) {
@@ -234,8 +234,21 @@ function makePanel(role) {
   panel.appendChild(titre);
 
   const image = document.createElement('div');
-  image.className = 'placeholder-image step-B2__panel-image';
+  image.className = 'step-B2__panel-image';
+  // Vraie image SVG d'etape
+  const stepImg = document.createElement('img');
+  stepImg.className = 'step-B2__panel-img';
+  stepImg.alt = '';
+  image.appendChild(stepImg);
   panel.appendChild(image);
+
+  // Tuko_assemblage en bas-gauche (visible uniquement sur le panel center).
+  // Mirroir horizontal pour qu'il regarde a gauche (sprite pointe a droite).
+  const tukoAss = document.createElement('img');
+  tukoAss.className = 'step-B2__tuko-assemblage';
+  tukoAss.src = 'assets/sprites/tuko_assemblage.png';
+  tukoAss.alt = '';
+  image.appendChild(tukoAss);
 
   const caption = document.createElement('p');
   caption.className = 'step-B2__panel-caption';
@@ -338,7 +351,7 @@ function render(skipTransition) {
     const stepNum = i + 1;
     seg.classList.toggle('is-done', stepNum < currentStepIdx);
     seg.classList.toggle('is-current', stepNum === currentStepIdx);
-    seg.classList.toggle('is-warm', stepNum === currentStepIdx && currentStepIdx >= 13);
+    seg.classList.toggle('is-warm', stepNum === currentStepIdx && currentStepIdx >= 10);
   });
   subLabelEl.textContent = `etape ${currentStepIdx} sur ${TOTAL}`;
   subLabelEl.classList.remove('is-fading');
@@ -351,6 +364,9 @@ function render(skipTransition) {
   const prevStep = currentStepIdx > 1 ? STEPS[currentStepIdx - 2] : null;
   const curStep = STEPS[currentStepIdx - 1];
   const nextStep = currentStepIdx < TOTAL ? STEPS[currentStepIdx] : null;
+
+  // Si pas d'etape precedente : masquer le panel gauche + passer en 2 colonnes
+  panelsWrapEl?.classList.toggle('no-prev', !prevStep);
 
   fillPanel(panelsEl.left, prevStep, 'past');
   fillPanel(panelsEl.center, curStep, 'current');
@@ -373,9 +389,9 @@ function render(skipTransition) {
   tukoEl.classList.remove('is-waiting');
   if (currentStepIdx <= 3) {
     tukoEl.dataset.pose = 'spectateur';
-  } else if (currentStepIdx <= 9) {
+  } else if (currentStepIdx <= 7) {
     tukoEl.dataset.pose = 'pedagogique';
-  } else if (currentStepIdx <= 14) {
+  } else if (currentStepIdx < TOTAL) {
     tukoEl.dataset.pose = 'presentateur';
   } else {
     tukoEl.dataset.pose = 'triomphe';
@@ -394,6 +410,7 @@ function render(skipTransition) {
 function fillPanel(panel, step, role, opts = {}) {
   const titreEl = panel.querySelector('.step-B2__panel-titre');
   const imageEl = panel.querySelector('.step-B2__panel-image');
+  const imgTag = panel.querySelector('.step-B2__panel-img');
   const captionEl = panel.querySelector('.step-B2__panel-caption');
   const badgeEl = panel.querySelector('.step-B2__panel-badge');
 
@@ -403,7 +420,7 @@ function fillPanel(panel, step, role, opts = {}) {
   if (!step) {
     panel.classList.add('step-B2__panel--empty');
     titreEl.textContent = role === 'past' ? '- DEBUT -' : '> TERMINE';
-    imageEl.textContent = '';
+    if (imgTag) { imgTag.removeAttribute('src'); imgTag.style.display = 'none'; }
     captionEl.textContent = role === 'past' ? 'rien avant' : 'plus rien apres';
     if (opts.isFinal && role === 'future') {
       panel.classList.add('step-B2__panel--final');
@@ -415,7 +432,10 @@ function fillPanel(panel, step, role, opts = {}) {
   }
 
   titreEl.textContent = step.titre;
-  imageEl.textContent = step.image;
+  if (imgTag) {
+    imgTag.style.display = '';
+    if (imgTag.getAttribute('src') !== step.image) imgTag.src = step.image;
+  }
   captionEl.textContent = step.caption;
   if (role === 'past') badgeEl.textContent = 'ok';
   else if (role === 'future') badgeEl.textContent = '>';
@@ -495,8 +515,8 @@ function injectStyles() {
       inset: 0;
       display: grid;
       grid-template-rows: auto 1fr auto;
-      gap: var(--s-4);
-      padding: var(--s-5) var(--s-6) var(--s-5);
+      gap: var(--s-3);
+      padding: var(--s-3) var(--s-4) var(--s-8) var(--s-4);
     }
 
     .step-B2__bar-wrap {
@@ -538,9 +558,22 @@ function injectStyles() {
       grid-template-columns: repeat(3, 1fr);
       gap: var(--s-4);
       align-items: stretch;
-      max-width: 1500px;
       width: 100%;
       margin: 0 auto;
+      min-height: 0;
+    }
+
+    /* Pas d'etape precedente : on retire le panel gauche et on bascule
+       sur 2 colonnes BEAUCOUP plus larges (current + future, ~x2). */
+    .step-B2__panels.no-prev {
+      grid-template-columns: 1fr 1fr;
+      max-width: 1800px;
+    }
+    .step-B2__panels.no-prev .step-B2__panel--left {
+      display: none;
+    }
+    .step-B2__panels.no-prev .step-B2__panel-image {
+      min-height: 480px;
     }
 
     .step-B2__panel {
@@ -600,7 +633,41 @@ function injectStyles() {
     }
 
     .step-B2__panel-image {
-      min-height: 220px;
+      min-height: 320px;
+      width: 100%;
+      position: relative;
+      background: #F5EBD6;            /* fond creme derriere l'image */
+      border: var(--border-thin);
+      border-radius: var(--r-md);
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+    }
+    .step-B2__panel-img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Tuko_assemblage : visible uniquement dans le panel courant (center),
+       en bas-gauche du placeholder image, mirroré horizontal. */
+    .step-B2__tuko-assemblage {
+      display: none;
+      position: absolute;
+      bottom: var(--s-2);
+      left: var(--s-2);
+      width: clamp(140px, 18%, 240px);
+      height: auto;
+      transform: scaleX(-1);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .step-B2__panel--center .step-B2__tuko-assemblage {
+      display: block;
     }
 
     .step-B2__panel-caption {

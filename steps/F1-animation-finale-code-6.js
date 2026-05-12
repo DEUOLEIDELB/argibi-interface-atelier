@@ -109,7 +109,7 @@ const CSS = `
   align-items: center;
   justify-items: center;
   gap: var(--s-4);
-  padding: var(--s-6) var(--s-6);
+  padding: var(--s-6) var(--s-6) var(--s-8);
   overflow: hidden;
   background: var(--bg);
 }
@@ -151,10 +151,19 @@ const CSS = `
 
 .step-F1__codes {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   gap: var(--s-3);
   align-items: flex-start;
+}
+
+/* Centrage du chiffre dans la cellule (override scoped F1). */
+.step-F1__codes .cell-digit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
 }
 
 .step-F1__code-stack {
@@ -174,14 +183,14 @@ const CSS = `
 }
 
 .step-F1__code-stack .cell-digit.is-filled {
-  animation: f1-cell-snap var(--d-normal) var(--ease-bounce);
+  animation: f1-cell-snap var(--d-normal) var(--ease-bounce) forwards;
 }
 
 .step-F1__code-stack.is-from-side-left .cell-digit.is-filled {
-  animation: f1-cell-from-left var(--d-slow) var(--ease-bounce);
+  animation: f1-cell-from-left var(--d-slow) var(--ease-bounce) forwards;
 }
 .step-F1__code-stack.is-from-side-right .cell-digit.is-filled {
-  animation: f1-cell-from-right var(--d-slow) var(--ease-bounce);
+  animation: f1-cell-from-right var(--d-slow) var(--ease-bounce) forwards;
 }
 
 @keyframes f1-cell-pop {
@@ -213,14 +222,6 @@ const CSS = `
   box-shadow: 0 0 0 4px var(--accent-3), var(--shadow);
   transition: background var(--d-normal) var(--ease-out),
               box-shadow var(--d-normal) var(--ease-out);
-}
-
-.step-F1__sublabel {
-  font-family: var(--mono);
-  font-size: var(--t-small);
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  opacity: 0.55;
 }
 
 /* Cadenas — positionne au-dessus de la cellule, invisible jusqu'au Temps 2. */
@@ -279,30 +280,23 @@ const CSS = `
   100% { opacity: 0; }
 }
 
-/* Hero placeholder Tuko libere — visible uniquement Temps 3. */
+/* Hero Tuko libere (sprite tuko_reward) — visible uniquement Temps 3. */
 .step-F1__hero {
   position: relative;
   z-index: 2;
-  width: 360px;
-  height: 360px;
   display: none;
-  place-items: center;
-  background: var(--paper);
-  border: var(--border);
-  box-shadow: var(--shadow-lg);
-  border-radius: var(--r-lg);
-  font-family: var(--mono);
-  font-size: var(--t-tiny);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--accent-4);
-  text-align: center;
-  gap: var(--s-1);
-  flex-direction: column;
+  width: auto;
+  height: auto;
+}
+.step-F1__hero-img {
+  width: auto;
+  height: clamp(360px, 42vh, 520px);
+  object-fit: contain;
+  display: block;
 }
 
 .step-F1.is-phase-3 .step-F1__hero {
-  display: grid;
+  display: block;
   animation: f1-hero-drop var(--d-hero) var(--ease-bounce) forwards;
 }
 
@@ -312,8 +306,6 @@ const CSS = `
   80%  { transform: translateY(0)      scale(0.96) rotate(-2deg); }
   100% { transform: translateY(0)      scale(1)    rotate(0);     opacity: 1; }
 }
-
-.step-F1__hero-emoji { font-size: var(--t-hero); line-height: 1; }
 
 /* Citation perso — Temps 3, alterne 10 prenoms aleatoires (~4s). */
 .step-F1__merci {
@@ -327,14 +319,6 @@ const CSS = `
 }
 
 .step-F1.is-phase-3 .step-F1__merci { display: flex; }
-
-.step-F1__merci-label {
-  font-family: var(--mono);
-  font-size: var(--t-body);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  opacity: 0.55;
-}
 
 .step-F1__merci-name {
   font-family: var(--display);
@@ -379,25 +363,6 @@ const CSS = `
   pointer-events: auto;
 }
 
-/* Tuko bas-gauche — pose triomphe quand on entre en Temps 3. */
-.step-F1__tuko-bg {
-  z-index: 3;
-}
-
-/* Hint discret pour l'animateur. */
-.step-F1__hint {
-  position: absolute;
-  left: 50%;
-  bottom: var(--s-2);
-  transform: translateX(-50%);
-  z-index: 4;
-  font-family: var(--mono);
-  font-size: var(--t-tiny);
-  opacity: 0.45;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  pointer-events: none;
-}
 `;
 
 // --------------------------------------------------------------------------
@@ -680,17 +645,15 @@ export default {
     titre.textContent = 'CODE COMPLET';
     root.appendChild(titre);
 
-    // Hero placeholder Tuko libere (visible Temps 3).
+    // Hero Tuko libere (sprite reel, visible Temps 3).
     const hero = document.createElement('div');
     hero.className = 'step-F1__hero';
     hero.setAttribute('aria-label', 'Tuko libere');
-    const heroEmoji = document.createElement('span');
-    heroEmoji.className = 'step-F1__hero-emoji';
-    heroEmoji.textContent = '🦊';
-    hero.appendChild(heroEmoji);
-    const heroLabel = document.createElement('span');
-    heroLabel.textContent = 'Tuko · libéré';
-    hero.appendChild(heroLabel);
+    const heroImg = document.createElement('img');
+    heroImg.className = 'step-F1__hero-img';
+    heroImg.src = 'assets/sprites/tuko_reward.png';
+    heroImg.alt = '';
+    hero.appendChild(heroImg);
     root.appendChild(hero);
 
     // 6 cellules + cadenas par-dessus.
@@ -721,24 +684,14 @@ export default {
       stack.appendChild(cell);
       cellEls.push(cell);
 
-      // Sub-label C/C/P/P/L/L.
-      const sub = document.createElement('span');
-      sub.className = 'step-F1__sublabel';
-      sub.textContent = SUB_LABELS[i];
-      stack.appendChild(sub);
-
       codes.appendChild(stack);
       stackEls.push(stack);
     }
     root.appendChild(codes);
 
-    // Citation perso (visible Temps 3).
+    // Citation perso (visible Temps 3) : juste le prenom, plus de label "merci a :".
     const merci = document.createElement('div');
     merci.className = 'step-F1__merci';
-    const merciLabel = document.createElement('span');
-    merciLabel.className = 'step-F1__merci-label';
-    merciLabel.textContent = 'merci à :';
-    merci.appendChild(merciLabel);
     const merciName = document.createElement('span');
     merciName.className = 'step-F1__merci-name';
     merciName.textContent = '';
@@ -755,25 +708,11 @@ export default {
     bottom.appendChild(cta);
     root.appendChild(bottom);
 
-    // Tuko mascotte bas-gauche (pose triomphe au Temps 3).
-    const tukoBg = document.createElement('div');
-    tukoBg.className = 'tuko-mascotte step-F1__tuko-bg';
-    tukoBg.setAttribute('data-pose', 'triomphe');
-    tukoBg.setAttribute('data-position', 'bas-gauche');
-    tukoBg.setAttribute('aria-label', 'Tuko triomphant');
-    root.appendChild(tukoBg);
-
     // Flash plein ecran (au dernier unlock du Temps 2).
     const flash = document.createElement('div');
     flash.className = 'step-F1__flash';
     flash.setAttribute('aria-hidden', 'true');
     root.appendChild(flash);
-
-    // Hint animateur.
-    const hint = document.createElement('span');
-    hint.className = 'step-F1__hint';
-    hint.textContent = 'espace · passe au final  ·  backspace · recommence';
-    root.appendChild(hint);
 
     stage.appendChild(root);
     domNodes.push(root);

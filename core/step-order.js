@@ -4,7 +4,7 @@
 
 export const STEP_ORDER = [
   // Phase A — Embarquement
-  'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6',
+  'A0', 'A1', 'A2', 'A3', 'A5', 'A6',
   // Phase B — Assemblage
   'B1', 'B2', 'B3', 'B4',
   // Phase C — Tutoriel contrôles
@@ -14,7 +14,7 @@ export const STEP_ORDER = [
   // Phase D — Initialisation entrées (interrupteur)
   'D4', 'D5', 'D6', 'D7',
   // Phase D — Initialisation entrées (capteur)
-  'D8', 'D9', 'D10', 'D11',
+  'D8', 'D9', 'D10',
   // Phase D — Synthèse
   'D12',
   // Phase E — Attaque + épreuves
@@ -24,10 +24,10 @@ export const STEP_ORDER = [
 ];
 
 export const PHASE_OF = {
-  A: ['A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6'],
+  A: ['A0', 'A1', 'A2', 'A3', 'A5', 'A6'],
   B: ['B1', 'B2', 'B3', 'B4'],
   C: ['C1'],
-  D: ['D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10', 'D11', 'D12'],
+  D: ['D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10', 'D12'],
   E: ['E0', 'E1', 'E2', 'E3', 'E4'],
   F: ['F1', 'F2'],
 };
@@ -48,7 +48,6 @@ export const STEP_SLUGS = {
   A1: 'qui-est-la',
   A2: 'echauffement',
   A3: 'avertissement',
-  A4: 'bd-lore',
   A5: 'feuille-de-route',
   A6: 'identification-composants',
   B1: 'preparation-assemblage',
@@ -62,12 +61,11 @@ export const STEP_SLUGS = {
   D3: 'vraie-vie-collectif',
   D4: 'titre-interrupteur',
   D5: 'activite-interrupteur',
-  D6: 'mini-jeu-avatar-tuko',
+  D6: 'mini-jeu-cadenas',
   D7: 'vraie-vie-interrupteur',
   D8: 'titre-capteur',
   D9: 'activite-capteur',
   D10: 'mini-jeu-laboratoire',
-  D11: 'vraie-vie-capteur',
   D12: 'synthese-comptes-rendus',
   E0: 'attaque-kurnel',
   E1: 'titre-epreuves',

@@ -27,13 +27,15 @@
   --body:    'Archivo', system-ui, sans-serif;
   --mono:    'JetBrains Mono', ui-monospace, monospace;
 
-  /* Échelle (cible 1920x1080, lisible à 5m) */
-  --t-hero:    clamp(80px, 9vw, 120px);
-  --t-h1:      clamp(48px, 5vw, 72px);
-  --t-h2:      clamp(36px, 4vw, 56px);
-  --t-body-xl: clamp(28px, 2.6vw, 36px);
-  --t-body:    clamp(20px, 1.8vw, 26px);
-  --t-small:   clamp(16px, 1.3vw, 20px);
+  /* Échelle (cible 1920x1080, lisible à 5m).
+     Plafonds remontés pour la projection en classe ; mins inchangés
+     pour garder la lisibilité sur petits écrans de dev. */
+  --t-hero:    clamp(80px, 9vw, 160px);
+  --t-h1:      clamp(48px, 5vw, 88px);
+  --t-h2:      clamp(36px, 4vw, 64px);
+  --t-body-xl: clamp(28px, 2.8vw, 44px);
+  --t-body:    clamp(20px, 1.8vw, 30px);
+  --t-small:   clamp(16px, 1.4vw, 24px);
   --t-tiny:    14px; /* RÉSERVÉ aux contrôles animateur */
 
   /* ----- 3. Espacement (échelle 8) ----- */
@@ -86,11 +88,12 @@
   --stage-w:        100vw;
   --stage-h:        100vh;
 
-  /* ----- 7. Curseurs Tuko ----- */
-  --cursor-default:     url('../assets/cursors/default.png') 8 4, auto;
-  --cursor-pointer:     url('../assets/cursors/pointer.png') 16 4, pointer;
-  --cursor-grab:        url('../assets/cursors/grab.png') 32 32, grab;
-  --cursor-grabbing:    url('../assets/cursors/grabbing.png') 32 32, grabbing;
-  --cursor-not-allowed: url('../assets/cursors/not-allowed.png') 32 32, not-allowed;
-  --cursor-text:        url('../assets/cursors/text.png') 16 32, text;
+  /* ----- 7. Curseurs Tuko : DESACTIVES (curseurs natifs). -----
+     Pour reactiver : remettre les url('../assets/cursors/*.png') ci-dessous. */
+  --cursor-default:     auto;
+  --cursor-pointer:     pointer;
+  --cursor-grab:        grab;
+  --cursor-grabbing:    grabbing;
+  --cursor-not-allowed: not-allowed;
+  --cursor-text:        text;
 }

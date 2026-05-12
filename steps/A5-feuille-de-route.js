@@ -185,7 +185,7 @@ const STYLES = `
   gap: var(--s-2);
 }
 
-/* Temps 2 -- loot drop ----------------------------------------------------- */
+/* Temps 2 -- boite illu + faisceau rotatif -------------------------------- */
 
 .step-A5__t2 {
   position: relative;
@@ -196,57 +196,154 @@ const STYLES = `
   gap: var(--s-3);
 }
 
-.step-A5__beam {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 220px;
-  transform: translateX(-50%);
+/* Wrapper relative qui contient la boite + le faisceau centre. */
+.step-A5__boite-wrap {
+  grid-row: 1;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
   height: 100%;
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--accent-3) 50%, transparent),
-    color-mix(in srgb, var(--accent-3) 8%, transparent)
+}
+
+/* Halo lumineux pulsant DERRIERE la boite (radial gradient doux). */
+.step-A5__halo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: clamp(420px, 42vw, 600px);
+  height: clamp(420px, 42vw, 600px);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent-3) 60%, transparent) 0%,
+    color-mix(in srgb, var(--accent-3) 25%, transparent) 35%,
+    transparent 70%
   );
+  border-radius: 50%;
   pointer-events: none;
-  opacity: 0;
   z-index: 1;
-  filter: blur(4px);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.9);
 }
 
-.step-A5__beam.is-in {
-  animation: a5-beam-in 500ms var(--ease-out) forwards,
-             a5-beam-pulse 1.6s ease-in-out 800ms infinite;
+.step-A5__halo.is-in {
+  animation: a5-halo-fade 600ms var(--ease-out) forwards,
+             a5-halo-pulse 2.4s ease-in-out 600ms infinite;
 }
 
-@keyframes a5-beam-in {
-  0%   { opacity: 0; transform: translateX(-50%) scaleY(0); transform-origin: top; }
-  100% { opacity: 0.85; transform: translateX(-50%) scaleY(1); }
+@keyframes a5-halo-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-@keyframes a5-beam-pulse {
-  0%, 100% { opacity: 0.85; }
-  50%      { opacity: 0.55; }
+@keyframes a5-halo-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(0.95); }
+  50%      { transform: translate(-50%, -50%) scale(1.12); }
 }
 
+/* Anneau de rayons fins violets qui tournent doucement en sens inverse.
+   Profil adouci (gradient de transparence sur les bords des rayons) +
+   leger blur pour un mouvement qui parait plus organique, moins geometrique. */
+.step-A5__beam-2 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: clamp(640px, 66vw, 920px);
+  height: clamp(640px, 66vw, 920px);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 1deg,
+    var(--accent-1) 4deg 5deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 8deg,
+    transparent 12deg 30deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 31deg,
+    var(--accent-1) 34deg 35deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 38deg,
+    transparent 42deg 60deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 61deg,
+    var(--accent-1) 64deg 65deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 68deg,
+    transparent 72deg 90deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 91deg,
+    var(--accent-1) 94deg 95deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 98deg,
+    transparent 102deg 120deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 121deg,
+    var(--accent-1) 124deg 125deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 128deg,
+    transparent 132deg 150deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 151deg,
+    var(--accent-1) 154deg 155deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 158deg,
+    transparent 162deg 180deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 181deg,
+    var(--accent-1) 184deg 185deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 188deg,
+    transparent 192deg 210deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 211deg,
+    var(--accent-1) 214deg 215deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 218deg,
+    transparent 222deg 240deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 241deg,
+    var(--accent-1) 244deg 245deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 248deg,
+    transparent 252deg 270deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 271deg,
+    var(--accent-1) 274deg 275deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 278deg,
+    transparent 282deg 300deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 301deg,
+    var(--accent-1) 304deg 305deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 308deg,
+    transparent 312deg 330deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 331deg,
+    var(--accent-1) 334deg 335deg,
+    color-mix(in srgb, var(--accent-1) 30%, transparent) 338deg,
+    transparent 342deg 360deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent 25%, black 38%, black 52%, transparent 88%);
+  mask:         radial-gradient(circle, transparent 25%, black 38%, black 52%, transparent 88%);
+  pointer-events: none;
+  filter: blur(2px);
+  z-index: 1;
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(0deg);
+}
+
+.step-A5__beam-2.is-in {
+  animation: a5-beam2-fade 600ms var(--ease-out) 200ms forwards,
+             a5-beam2-rotate 18s linear 600ms infinite;
+}
+
+@keyframes a5-beam2-fade {
+  from { opacity: 0; }
+  to   { opacity: 0.7; }
+}
+
+@keyframes a5-beam2-rotate {
+  0%   { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(-360deg); }
+}
+
+/* Boite : illustration seule, sans cadre paper/border/shadow. */
 .step-A5__boite {
   position: relative;
   z-index: 2;
-  width: 320px;
-  height: 240px;
-  background: var(--paper);
-  border: var(--border);
-  box-shadow: var(--shadow-lg);
-  border-radius: var(--r-md);
-  display: grid;
-  place-items: center;
-  font-family: var(--display);
-  font-size: var(--t-h2);
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: -0.005em;
-  color: var(--ink);
+  width: clamp(280px, 28vw, 420px);
+  height: auto;
+  background: transparent;
+  border: none;
+  box-shadow: none;
   opacity: 0;
+  display: block;
+}
+
+.step-A5__boite img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .step-A5__boite.is-in {
@@ -361,12 +458,6 @@ export default {
     const main = document.createElement('div');
     wrap.appendChild(main);
 
-    const tuko = document.createElement('div');
-    tuko.className = 'tuko-mascotte';
-    tuko.setAttribute('data-pose', 'hote');
-    tuko.setAttribute('data-position', 'bas-gauche');
-    wrap.appendChild(tuko);
-
     stage.appendChild(wrap);
     domNodes.push(wrap);
 
@@ -375,7 +466,6 @@ export default {
     }
 
     function renderTemps1() {
-      tuko.setAttribute('data-pose', 'hote');
       if (stopPluie) { stopPluie(); stopPluie = null; }
       main.replaceChildren();
       main.className = 'step-A5__t1';
@@ -452,24 +542,32 @@ export default {
     }
 
     function renderTemps2() {
-      tuko.setAttribute('data-pose', 'triomphe');
       timers.forEach(clearTimeout);
       timers = [];
       main.replaceChildren();
       main.className = 'step-A5__t2';
 
-      const beam = document.createElement('div');
-      beam.className = 'step-A5__beam';
-      main.appendChild(beam);
+      // Wrapper centre : halo jaune (seul effet lumineux) + boite
+      const boiteWrap = document.createElement('div');
+      boiteWrap.className = 'step-A5__boite-wrap';
+
+      const halo = document.createElement('div');
+      halo.className = 'step-A5__halo';
+      boiteWrap.appendChild(halo);
 
       const boite = document.createElement('div');
       boite.className = 'step-A5__boite';
-      boite.textContent = 'argibi';
-      main.appendChild(boite);
+      const boiteImg = document.createElement('img');
+      boiteImg.src = 'assets/sprites/A5/boite.png';
+      boiteImg.alt = 'boite Argibi';
+      boite.appendChild(boiteImg);
+      boiteWrap.appendChild(boite);
+
+      main.appendChild(boiteWrap);
 
       const t2titre = document.createElement('h1');
       t2titre.className = 'step-A5__t2-titre';
-      t2titre.textContent = 'ta capsule est prete';
+      t2titre.textContent = 'À votre boite !';
       main.appendChild(t2titre);
 
       const oldBottom = wrap.querySelector('.step-A5__bottom');
@@ -479,12 +577,12 @@ export default {
       const cta = document.createElement('button');
       cta.className = "cta-primary step-A5__t2-cta";
       cta.type = 'button';
-      cta.textContent = "> ON L'OUVRE !";
+      cta.textContent = "ON L'OUVRE !";
       bottom.appendChild(cta);
       wrap.appendChild(bottom);
 
       requestAnimationFrame(() => {
-        beam.classList.add('is-in');
+        halo.classList.add('is-in');
         boite.classList.add('is-in');
         t2titre.classList.add('is-in');
         cta.classList.add('is-in');
@@ -545,7 +643,7 @@ export default {
           e.stopImmediatePropagation();
           switchToTemps(1);
         }
-        // sur temps 1 : on laisse passer pour reculer vers A4
+        // sur temps 1 : on laisse passer pour reculer vers le step precedent
         return;
       }
     };

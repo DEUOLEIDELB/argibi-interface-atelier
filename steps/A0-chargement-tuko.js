@@ -148,7 +148,6 @@ export default {
     const wrap = document.createElement('div');
     wrap.className = 'step-A0';
 
-    // ----- Centre : Tuko seul -----------------------------------------------
     const center = document.createElement('div');
     center.className = 'step-A0__center';
 
@@ -157,13 +156,11 @@ export default {
     const tuko = document.createElement('div');
     tuko.className = 'tuko-mascotte';
     tuko.setAttribute('data-pose', 'hote');
-    tuko.setAttribute('data-position', 'inline');
     tukoWrap.appendChild(tuko);
     center.appendChild(tukoWrap);
 
     wrap.appendChild(center);
 
-    // ----- Bas : barre progression + label ----------------------------------
     const bottom = document.createElement('div');
     bottom.className = 'step-A0__bottom';
 
@@ -187,7 +184,6 @@ export default {
 
     wrap.appendChild(bottom);
 
-    // ----- Flash de fin -----------------------------------------------------
     const flash = document.createElement('div');
     flash.className = 'step-A0__final-flash';
     wrap.appendChild(flash);
@@ -195,7 +191,6 @@ export default {
     stage.appendChild(wrap);
     domNodes.push(wrap);
 
-    // ----- Remplissage barre en stop-motion --------------------------------
     let segIdx = 0;
     const fillNext = () => {
       if (segIdx >= segs.length) return;
@@ -207,7 +202,6 @@ export default {
     };
     fillNext();
 
-    // ----- Bascule auto vers A1 -------------------------------------------
     const goNext = () => {
       if (advanceFired) return;
       advanceFired = true;
@@ -222,14 +216,13 @@ export default {
     const autoT = setTimeout(goNext, MIN_DURATION_MS + 200);
     timers.push(autoT);
 
-    // ----- Skip (Espace ou clic) seulement apres MIN_DURATION_MS -----------
     const onSkip = (evt) => {
       if (evt.type === 'keydown') {
         if (evt.key !== ' ' && evt.key !== 'Spacebar') return;
         if (evt.target?.tagName?.toLowerCase() === 'input') return;
       }
       const elapsed = performance.now() - entryStartedAt;
-      if (elapsed < MIN_DURATION_MS) return; // skip silencieux ignore
+      if (elapsed < MIN_DURATION_MS) return;
       goNext();
     };
     window.addEventListener('keydown', onSkip);

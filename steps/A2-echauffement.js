@@ -33,12 +33,14 @@ const STYLES = `
   overflow: hidden;
 }
 
-/* ----- Tuko_myst : top-left, shake aleatoire ------------------------------ */
+/* ----- Tuko_myst : absolute top-left, shake aleatoire --------------------- */
 
 .step-A2__tuko {
-  position: absolute;
-  top: var(--s-3);
-  left: var(--s-4);
+  position: absolute !important;
+  top: var(--s-3) !important;
+  left: var(--s-4) !important;
+  bottom: auto !important;
+  right: auto !important;
   --tuko-mascotte-size: clamp(140px, 13vw, 180px);
   background: url('assets/sprites/tuko_myst.png') center / contain no-repeat !important;
   border: none !important;
@@ -73,7 +75,7 @@ const STYLES = `
   80%      { transform: translate(-2px, 1px)  rotate(-1.5deg); }
 }
 
-/* ----- Compteur : top-right ----------------------------------------------- */
+/* ----- Compteur : absolute top-right -------------------------------------- */
 
 .step-A2__counter {
   position: absolute;
@@ -100,7 +102,7 @@ const STYLES = `
   letter-spacing: 0.18em;
 }
 
-/* ----- Headings centres, descendus vers le bas ---------------------------- */
+/* ----- Headings centres --------------------------------------------------- */
 
 .step-A2__title {
   grid-row: 2;
@@ -130,7 +132,7 @@ const STYLES = `
   justify-self: center;
 }
 
-/* ----- Grille de cards : 4 cols x 2 rows, tailles uniformes --------------- */
+/* ----- Grille de cards : 4 cols x 2 rows ---------------------------------- */
 
 .step-A2__grid {
   grid-row: 4;
@@ -289,14 +291,13 @@ export default {
     const wrap = document.createElement('div');
     wrap.className = 'step-A2';
 
-    // ----- Tuko_myst : absolute top-left, shake aleatoire -----------------
+    // Tuko_myst : absolute top-left (PAS de data-position pour eviter le piege specificity)
     const tuko = document.createElement('div');
     tuko.className = 'tuko-mascotte step-A2__tuko';
     tuko.setAttribute('data-pose', 'mysterieux');
-    tuko.setAttribute('data-position', 'inline');
     wrap.appendChild(tuko);
 
-    // ----- Compteur : absolute top-right ----------------------------------
+    // Compteur : absolute top-right
     const counter = document.createElement('div');
     counter.className = 'compteur-geant step-A2__counter';
     const counterValue = document.createElement('div');
@@ -308,10 +309,10 @@ export default {
     counter.appendChild(counterLabel);
     wrap.appendChild(counter);
 
-    // ----- Titre + sous-titre centres -------------------------------------
+    // Titre + sous-titre centres
     const title = document.createElement('h1');
     title.className = 'step-A2__title';
-    title.textContent = '8 OBJETS ÉLECTRONIQUES DE LA MAISON';
+    title.textContent = '8 OBJETS DE CHEZ TOI';
     wrap.appendChild(title);
 
     const subtitle = document.createElement('h2');
@@ -319,7 +320,7 @@ export default {
     subtitle.textContent = 'À vous de deviner !';
     wrap.appendChild(subtitle);
 
-    // ----- Grille de cards 4x2 --------------------------------------------
+    // Grille 4x2
     const grid = document.createElement('div');
     grid.className = 'step-A2__grid';
     wrap.appendChild(grid);
@@ -327,7 +328,6 @@ export default {
     stage.appendChild(wrap);
     domNodes.push(wrap);
 
-    // ----- Helpers --------------------------------------------------------
     function refreshCounter() {
       counterValue.textContent = `${revealedCards.length}/8`;
       counterValue.classList.add('is-pulsing');
@@ -345,7 +345,6 @@ export default {
         persist();
         refreshCounter();
       }
-      // boule de neige : les autres cards face cachee tremblent
       grid.querySelectorAll('.step-A2__card').forEach(c => {
         if (!c.classList.contains('is-revealed')) {
           c.classList.add('is-tremble');
@@ -355,7 +354,6 @@ export default {
       });
     }
 
-    // ----- Render des cards -----------------------------------------------
     OBJETS.forEach(obj => {
       const card = document.createElement('div');
       card.className = 'step-A2__card';
@@ -396,7 +394,7 @@ export default {
 
     refreshCounter();
 
-    // ----- Tuko shake aleatoire toutes les 3-8s ---------------------------
+    // Tuko shake aleatoire toutes les 3-8s
     function scheduleTukoShake() {
       const delay = 3000 + Math.random() * 5000;
       const t = setTimeout(() => {
@@ -412,7 +410,7 @@ export default {
     }
     scheduleTukoShake();
 
-    // ----- Raccourcis clavier 1-8 -----------------------------------------
+    // Raccourcis 1-8
     const onKey = (e) => {
       const tag = (e.target?.tagName || '').toLowerCase();
       if (tag === 'input' || tag === 'textarea') return;

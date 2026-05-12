@@ -128,32 +128,21 @@ function renderSlide1() {
 
   const cardsRow = buildEl('div', 'd12-cards');
   const items = [
-    { key: 'bouton',       name: 'BOUTON',       desc: 'appui : 0/1',     icon: 'O' },
-    { key: 'interrupteur', name: 'INTERRUPTEUR', desc: 'position : 0/1',  icon: '/' },
-    { key: 'capteur',      name: 'CAPTEUR',      desc: 'matiere : 0/1',   icon: '~' },
+    { key: 'bouton',       name: 'BOUTON',       image: 'assets/sprites/D12/bouton.png'       },
+    { key: 'interrupteur', name: 'INTERRUPTEUR', image: 'assets/sprites/D12/switch.png'       },
+    { key: 'capteur',      name: 'CAPTEUR',      image: 'assets/sprites/D12/touch-sensor.svg' },
   ];
   items.forEach((it, i) => {
-    const card = buildEl('button', `d12-card d12-card--${it.key}`);
+    const card = buildEl('div', `d12-card d12-card--${it.key}`);
     card.style.setProperty('--i', String(i));
     card.dataset.key = it.key;
-    card.setAttribute('aria-label', `${it.name} : rejouer la micro-animation`);
+    card.setAttribute('aria-label', it.name);
 
-    const iconWrap = buildEl('div', 'd12-card__icon');
-    const iconInner = buildEl('span', `d12-icon d12-icon--${it.key}`, it.icon);
-    iconWrap.appendChild(iconInner);
-    card.appendChild(iconWrap);
-
-    card.appendChild(buildEl('div', 'd12-card__name', it.name));
-    card.appendChild(buildEl('div', 'd12-card__desc', it.desc));
-
-    attach(card, 'click', () => {
-      // Anim rejouee : on retire et reapplique la classe de mini-anim.
-      iconInner.classList.remove('is-playing');
-      // Reflow pour reset l'animation CSS.
-      void iconInner.offsetWidth;
-      iconInner.classList.add('is-playing');
-      playSound('pop');
-    });
+    const img = buildEl('img', 'd12-card__img');
+    img.src = it.image;
+    img.alt = '';
+    img.loading = 'lazy';
+    card.appendChild(img);
 
     cardsRow.appendChild(card);
   });
@@ -174,11 +163,10 @@ function renderSlide1() {
 
   root.appendChild(recap);
 
-  // Tuko : composant partage  (posture emerveille = matrice qui s'allume,
-  // colle a la revelation binaire). Cf. components.css doc data-pose.
-  const tuko = buildEl('div', 'tuko-mascotte');
-  tuko.dataset.pose = 'emerveille';
-  tuko.dataset.position = 'bas-gauche';
+  // Tuko_surf en bas-droite : la vibe "cool, on a fini un truc ensemble".
+  const tuko = buildEl('img', 'd12-tuko-surf');
+  tuko.src = 'assets/sprites/tuko_surf.png';
+  tuko.alt = '';
   root.appendChild(tuko);
 
   // CTA
@@ -267,19 +255,12 @@ function renderSlide2() {
   const inputWrap = buildEl('div', 'd12-retentions__input-wrap');
   const input = buildEl('input', 'input-mega d12-retentions__input');
   input.type = 'text';
-  input.placeholder = 'tape une idee + Entree';
   input.maxLength = 24;
   inputWrap.appendChild(input);
   retZone.appendChild(inputWrap);
 
   const chipsCt = buildEl('div', 'd12-retentions__chips');
   retZone.appendChild(chipsCt);
-
-  // Mini-Tuko qui scanne les chips (apparait quand >= 3 chips).
-  // C'est un detail d'ambiance scope D12, pas un vrai .tuko-mascotte.
-  const miniTuko = buildEl('div', 'd12-mini-tuko', '(t.)');
-  miniTuko.setAttribute('aria-hidden', 'true');
-  retZone.appendChild(miniTuko);
 
   root.appendChild(retZone);
   chipsContainerEl = chipsCt;
@@ -295,11 +276,10 @@ function renderSlide2() {
     }
   });
 
-  // Tuko : composant partage  (posture presentateur = questions ouvertes,
-  // ici : "votre prefere ?"). Cf. components.css doc data-pose.
-  const tuko = buildEl('div', 'tuko-mascotte');
-  tuko.dataset.pose = 'presentateur';
-  tuko.dataset.position = 'bas-gauche';
+  // Tuko_surf bas-droite (meme pose qu'en slide 1 : continuite visuelle).
+  const tuko = buildEl('img', 'd12-tuko-surf');
+  tuko.src = 'assets/sprites/tuko_surf.png';
+  tuko.alt = '';
   root.appendChild(tuko);
 
   // Message "tout vous a plu" (cache par defaut)
@@ -326,7 +306,6 @@ function renderSlide2() {
   updateAllBars();
   updateCTAEnabled();
   updateBalanceMessage();
-  updateMiniTuko();
 
   void root.offsetWidth;
   root.classList.add('is-entered');
@@ -448,7 +427,6 @@ function addRetention(text) {
   spawnChip(trimmed, kw, true);
   playSound(kw ? 'success' : 'pop');
   updateCTAEnabled();
-  updateMiniTuko();
   persist();
 }
 
@@ -469,14 +447,6 @@ function spawnChip(text, kw, animate) {
       defer(() => c.classList.remove('is-trembling'), 1100);
     });
   }
-}
-
-function updateMiniTuko() {
-  const root = slideEl;
-  if (!root) return;
-  const mini = root.querySelector('.d12-mini-tuko');
-  if (!mini) return;
-  mini.classList.toggle('is-active', retentions.length >= 3);
 }
 
 // ----- CTA Slide 2 : convergence puis next -------------------------------
@@ -538,7 +508,7 @@ function installKeys() {
         e.stopImmediatePropagation();
         setSlide(1);
       }
-      // En slide 1, on laisse le shell faire back() vers D11.
+      // En slide 1, on laisse le shell faire back() vers D10.
     }
   };
   window.addEventListener('keydown', captureKeyHandler, { capture: true });
@@ -566,10 +536,31 @@ const SCOPED_CSS = `
   grid-template-rows: auto 1fr auto;
   align-items: center;
   justify-items: center;
-  padding: var(--s-6) var(--s-6);
+  padding: var(--s-4) var(--s-5) var(--s-8);
   gap: var(--s-4);
   opacity: 0;
   transition: opacity var(--d-fast) var(--ease-out);
+}
+/* Tuko_surf en bas-droite, presence cool, pas envahissante. */
+.d12-tuko-surf {
+  position: absolute;
+  bottom: var(--s-3);
+  right: var(--s-3);
+  width: clamp(220px, 18vw, 320px);
+  height: auto;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(80px);
+  animation: d12-tuko-in var(--d-slow) var(--ease-out) 800ms forwards,
+             d12-tuko-bobbing 3.2s ease-in-out 1700ms infinite;
+  z-index: 1;
+}
+@keyframes d12-tuko-in {
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes d12-tuko-bobbing {
+  0%, 100% { transform: translate(0, 0)    rotate(-1.5deg); }
+  50%      { transform: translate(0, -6px) rotate(1.5deg); }
 }
 .step-D12.is-entered { opacity: 1; }
 .step-D12.is-leaving { opacity: 0; transition: opacity var(--d-fast) var(--ease-in); }
@@ -631,58 +622,21 @@ const SCOPED_CSS = `
   70%  { opacity: 1; transform: scale(1.15); }
   100% { opacity: 1; transform: scale(1); }
 }
-.d12-card__icon {
-  height: 96px;
-  display: grid;
-  place-items: center;
-  background: var(--bg-2);
-  border: var(--border-thin);
-  border-radius: var(--r-md);
-  font-size: var(--t-hero);
-  font-weight: 900;
+.d12-card {
+  grid-template-rows: 1fr;
+  padding: var(--s-3);
+  cursor: var(--cursor-default);
 }
-.d12-icon {
-  display: inline-block;
-  font-family: var(--mono);
-  font-weight: 900;
-  line-height: 1;
+.d12-card:hover {
+  transform: none;
+  box-shadow: var(--shadow);
 }
-.d12-icon.is-playing { animation: d12-icon-replay var(--d-slow) var(--ease-bounce); }
-
-/* Mini-anim distincte par entree */
-.d12-icon--bouton.is-playing  { animation: d12-anim-bouton var(--d-normal) var(--ease-bounce); }
-.d12-icon--interrupteur.is-playing { animation: d12-anim-interrupteur var(--d-normal) var(--ease-bounce); }
-.d12-icon--capteur.is-playing { animation: d12-anim-capteur var(--d-slow) var(--ease-out); }
-@keyframes d12-anim-bouton {
-  0%, 100% { transform: scale(1); }
-  40%      { transform: scale(0.78); }
-  70%      { transform: scale(1.15); }
-}
-@keyframes d12-anim-interrupteur {
-  0%   { transform: rotateX(0deg); }
-  100% { transform: rotateX(180deg); }
-}
-@keyframes d12-anim-capteur {
-  0%   { transform: scale(1); text-shadow: 0 0 0 var(--accent-2); }
-  50%  { transform: scale(1.18); text-shadow: 0 0 24px var(--accent-2); }
-  100% { transform: scale(1); text-shadow: 0 0 0 var(--accent-2); }
-}
-@keyframes d12-icon-replay {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.15); }
-}
-
-.d12-card__name {
-  font-size: var(--t-h2);
-  font-weight: 900;
-  letter-spacing: -0.01em;
-}
-.d12-card__desc {
-  font-family: var(--mono);
-  font-size: var(--t-body);
-  letter-spacing: 0.05em;
-  color: var(--ink);
-  opacity: 0.85;
+.d12-card__img {
+  width: 100%;
+  height: clamp(180px, 22vh, 280px);
+  object-fit: contain;
+  object-position: center;
+  display: block;
 }
 
 .d12-arrows {
@@ -693,16 +647,11 @@ const SCOPED_CSS = `
   color: var(--ink);
   opacity: 0;
   transform: translateY(-20px);
-  animation: d12-arrows-in var(--d-normal) var(--ease-bounce) 1200ms forwards,
-             d12-arrows-pulse 2.4s ease-in-out 2000ms infinite;
+  animation: d12-arrows-in var(--d-normal) var(--ease-bounce) 1200ms forwards;
 }
 @keyframes d12-arrows-in {
   0%   { opacity: 0; transform: translateY(-20px); }
   100% { opacity: 1; transform: translateY(0); }
-}
-@keyframes d12-arrows-pulse {
-  0%, 100% { opacity: 0.6; }
-  50%      { opacity: 1; }
 }
 
 .d12-three-one {
@@ -731,57 +680,13 @@ const SCOPED_CSS = `
   color: var(--ink);
   opacity: 0;
   transform: scale(0);
-  position: relative;
-  animation: d12-glitch-then-smash 350ms var(--ease-out) 2150ms forwards;
+  animation: d12-binaire-smash 400ms var(--ease-bounce) 2000ms forwards;
 }
-/* Halo jaune bref au pic du smash, via pseudo-element pour utiliser
-   --accent-3 (pas de couleur hardcodee). */
-.d12-binaire::after {
-  content: '';
-  position: absolute;
-  inset: -10%;
-  background: var(--accent-3);
-  border-radius: var(--r-md);
-  opacity: 0;
-  pointer-events: none;
-  z-index: -1;
-  animation: d12-flash-bg 220ms var(--ease-out) 2300ms forwards;
-}
-.d12-binaire__text {
-  position: relative;
-  display: inline-block;
-}
-.d12-binaire__text::before,
-.d12-binaire__text::after {
-  content: attr(data-text);
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-}
-.d12-binaire__text::before {
-  color: var(--accent-2);
-  transform: translate(-3px, 0);
-  animation: d12-glitch-rgb 150ms steps(2) 2150ms;
-}
-.d12-binaire__text::after {
-  color: var(--accent-4);
-  transform: translate(3px, 0);
-  animation: d12-glitch-rgb 150ms steps(2) 2150ms;
-}
-@keyframes d12-glitch-then-smash {
+.d12-binaire__text { display: inline-block; }
+@keyframes d12-binaire-smash {
   0%   { opacity: 0; transform: scale(0); }
-  20%  { opacity: 1; transform: scale(0.95); }
-  60%  { opacity: 1; transform: scale(1.3); }
+  60%  { opacity: 1; transform: scale(1.15); }
   100% { opacity: 1; transform: scale(1); }
-}
-@keyframes d12-glitch-rgb {
-  0%, 100% { opacity: 0; }
-  50%      { opacity: 0.6; }
-}
-@keyframes d12-flash-bg {
-  0%, 100% { opacity: 0; }
-  40%      { opacity: 0.25; }
 }
 
 .d12-cta {
@@ -827,7 +732,7 @@ const SCOPED_CSS = `
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--s-4);
-  width: min(1400px, 100%);
+  width: min(1900px, 100%);
   margin-top: var(--s-3);
 }
 .d12-vote-card {
@@ -838,13 +743,15 @@ const SCOPED_CSS = `
   border-radius: var(--r-md);
   padding: var(--s-3);
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 220px auto;
   gap: var(--s-2);
   text-align: center;
   cursor: var(--cursor-pointer);
   font-family: var(--display);
-  min-height: 320px;
+  align-content: start;
   position: relative;
+  min-width: 0;
+  box-sizing: border-box;
   opacity: 0;
   transform: scale(0);
   animation: d12-pop var(--d-normal) var(--ease-bounce) forwards;
@@ -852,17 +759,16 @@ const SCOPED_CSS = `
   transition: transform var(--d-fast) var(--ease-out),
               box-shadow var(--d-fast) var(--ease-out);
 }
+.d12-vote-card__name {
+  min-width: 0;
+  white-space: nowrap;
+}
 .d12-vote-card:hover {
   transform: translate(-3px, -3px);
   box-shadow: var(--shadow-lg);
 }
 .d12-vote-card.is-leader {
   box-shadow: var(--shadow-accent-1);
-  animation: d12-leader-pulse 1.6s ease-in-out infinite;
-}
-@keyframes d12-leader-pulse {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.02); }
 }
 .d12-vote-card__name {
   font-size: var(--t-h2);
@@ -871,6 +777,7 @@ const SCOPED_CSS = `
 }
 .d12-vote-card__bar-wrap {
   position: relative;
+  width: 100%;
   height: 220px;
   background: var(--bg-2);
   border: var(--border-thin);
@@ -878,6 +785,8 @@ const SCOPED_CSS = `
   overflow: hidden;
   display: flex;
   align-items: flex-end;
+  box-sizing: border-box;
+  min-width: 0;
 }
 .d12-vote-card__bar {
   width: 100%;
@@ -948,26 +857,6 @@ const SCOPED_CSS = `
   80%      { transform: rotate(var(--rot, 0deg)) translate(-1px, 1px); }
 }
 
-.d12-mini-tuko {
-  position: absolute;
-  bottom: -36px;
-  left: 0;
-  font-family: var(--mono);
-  font-size: var(--t-small);
-  color: var(--accent-4);
-  opacity: 0;
-  transition: opacity var(--d-fast) var(--ease-out);
-  pointer-events: none;
-}
-.d12-mini-tuko.is-active {
-  opacity: 1;
-  animation: d12-mini-tuko-scan 6s ease-in-out infinite;
-}
-@keyframes d12-mini-tuko-scan {
-  0%, 100% { transform: translateX(0); }
-  50%      { transform: translateX(280px); }
-}
-
 .d12-balance {
   font-family: var(--mono);
   font-size: var(--t-body);
@@ -996,7 +885,7 @@ const SCOPED_CSS = `
   transform: scale(0.6);
   opacity: 0;
 }
-.step-D12--slide-2.is-converging .tuko-mascotte {
+.step-D12--slide-2.is-converging .d12-tuko-surf {
   transform: scale(0.6) translateY(40px);
 }
 `;

@@ -1,8 +1,10 @@
 // A3-avertissement.js — Page de regles de securite avant manipulation.
-// Tuko_warning absolute top-left. Banderole jaune/noir rayee en haut avec
-// "⚠ ATTENTION" hero, sous-titre en dessous. 2 cards cote a cote avec
-// illustrations (carte electronique / batterie externe) + titre + bullets.
-// CTA "C'EST COMPRIS" en bas. Espace = equivalent du clic CTA.
+// Tuko_warning absolute bottom-left (au-dessus du footer shell).
+// Banderole jaune/noir rayee ANIMEE en haut avec "ATTENTION" hero
+// blanc + contour noir. Sous-titre dessous. 2 cards cote a cote avec
+// illustrations (carte electronique / batterie externe) + titre + 3
+// mini-cards de regles colorees (palette Wubo). CTA "C'EST COMPRIS" en bas.
+// Padding wrap : var(--s-8) var(--s-5) (reference A1). Espace = clic CTA.
 // Cf. doc interne.
 
 import { Container } from 'pixi.js';
@@ -12,7 +14,6 @@ import { saveStepState } from '../core/state.js';
 const STYLE_ID = 'step-A3-style';
 
 // colorIdx : 1=violet(paper), 2=cyan(ink), 3=jaune(ink), 4=rose(paper)
-// Couleurs differentes par regle pour variation visuelle, palette Wubo.
 const REGLES = [
   {
     titre: 'électronique',
@@ -46,13 +47,13 @@ const STYLES = `
   position: absolute; inset: 0;
   display: grid;
   grid-template-rows: auto auto 1fr auto;
-  padding: var(--s-8) var(--s-5); /* aligne sur A1 : 128px top/bottom */
+  padding: var(--s-8) var(--s-5); /* 128px top/bottom : reference A1 */
   gap: var(--s-3);
   background: var(--bg);
   overflow: hidden;
 }
 
-/* ----- Tuko_warning : absolute top-left ----------------------------------- */
+/* ----- Tuko_warning : absolute bottom-left, au-dessus du footer ----------- */
 
 .step-A3__tuko {
   position: absolute !important;
@@ -60,7 +61,7 @@ const STYLES = `
   left: var(--s-4) !important;
   top: auto !important;
   right: auto !important;
-  --tuko-mascotte-size: clamp(140px, 13vw, 390px);
+  --tuko-mascotte-size: clamp(140px, 13vw, 190px);
   background: url('assets/sprites/tuko_warning.png') center / contain no-repeat !important;
   border: none !important;
   box-shadow: none !important;
@@ -81,7 +82,7 @@ const STYLES = `
   50%      { transform: translateY(-4px) rotate(1.5deg); }
 }
 
-/* ----- Banderole jaune/noir + Hero "ATTENTION" ---------------------------- */
+/* ----- Banderole jaune/noir ANIMEE + Hero "ATTENTION" --------------------- */
 
 .step-A3__banner {
   position: relative;
@@ -151,18 +152,13 @@ const STYLES = `
 
 .step-A3__sub {
   font-family: var(--body);
-  font-size: clamp(36px, 1.4vw, 22px);
+  font-size: clamp(56px, 1.4vw, 22px);
   font-weight: 600;
   text-align: center;
   margin: 0;
   color: var(--ink);
   justify-self: center;
-  opacity: 0.85;
-}
-
-.step-A3__sub.is-in {
   opacity: 0;
-  animation: a3-fade-in 400ms var(--ease-out) 400ms forwards;
 }
 
 .step-A3__sub.is-in {
@@ -170,7 +166,7 @@ const STYLES = `
 }
 
 @keyframes a3-fade-in {
-  to { opacity: 1; }
+  to { opacity: 0.85; }
 }
 
 /* ----- Cards 2x1 ---------------------------------------------------------- */
@@ -179,7 +175,7 @@ const STYLES = `
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--s-4);
-  align-content: center; /* centre les 2 cards verticalement DANS leur container */
+  align-content: center;
   width: min(1500px, 100%);
   height: 100%;
   min-height: 0;
@@ -240,7 +236,8 @@ const STYLES = `
   color: var(--ink);
 }
 
-/* Liste de regles : mini-cards colorees avec shadow, texte aligne gauche */
+/* ----- Mini-cards regles colorees, palette Wubo --------------------------- */
+
 .step-A3__rules {
   list-style: none;
   margin: 0;
@@ -260,7 +257,7 @@ const STYLES = `
   border-radius: var(--r-md);
   padding: 12px var(--s-3);
   font-family: var(--body);
-  font-size: clamp(20px, 1.8vw, 28px);
+  font-size: clamp(40px, 1.8vw, 28px);
   font-weight: 700;
   line-height: 1.25;
   text-align: left;
@@ -278,7 +275,7 @@ const STYLES = `
   100% { opacity: 1; transform: translateX(0)     scale(1); }
 }
 
-/* ----- CTA bottom (memes proprietes que step-A1__cta-area) ---------------- */
+/* ----- CTA bottom : identique a step-A1__cta (cta-primary + animation:none) */
 
 .step-A3__cta-area {
   display: grid;
@@ -286,15 +283,20 @@ const STYLES = `
   margin-top: var(--s-3);
 }
 
+/* Strictement identique a .step-A1__cta : herite TOUT du shared .cta-primary
+   (bg violet, font, padding, border, shadow). Seul override : kill la pulse
+   idle. Pendant la sequence d'entree, opacity 0 puis fade-in via .is-in. */
 .step-A3__cta {
   animation: none !important;
   opacity: 0;
-  font-size: clamp(28px, 2.4vw, 40px);
-  padding: 12px var(--s-5);
 }
 
 .step-A3__cta.is-in {
-  animation: a3-fade-in 400ms var(--ease-out) forwards !important;
+  animation: a3-cta-fade-in 400ms var(--ease-out) forwards !important;
+}
+
+@keyframes a3-cta-fade-in {
+  to { opacity: 1; }
 }
 `;
 
@@ -338,31 +340,28 @@ export default {
     const wrap = document.createElement('div');
     wrap.className = 'step-A3';
 
-    // ----- Tuko_warning : absolute bottom-left, juste au-dessus du footer
-    // (pas de data-position pour ne pas heriter du position:relative du shared)
+    // Tuko_warning : absolute bottom-left (PAS de data-position pour eviter le piege)
     const tuko = document.createElement('div');
     tuko.className = 'tuko-mascotte step-A3__tuko';
     tuko.setAttribute('data-pose', 'pedagogique');
     wrap.appendChild(tuko);
 
-    // ----- Banderole jaune/noir + Hero "ATTENTION" ------------------------
+    // Banderole jaune/noir + Hero ATTENTION
     const banner = document.createElement('div');
     banner.className = 'step-A3__banner';
-
     const hero = document.createElement('h1');
     hero.className = 'step-A3__hero';
     hero.textContent = 'ATTENTION';
     banner.appendChild(hero);
-
     wrap.appendChild(banner);
 
-    // ----- Sous-titre -----------------------------------------------------
+    // Sous-titre
     const sub = document.createElement('p');
     sub.className = 'step-A3__sub';
     sub.textContent = 'Avant de commencer, quelques règles de sécurité !';
     wrap.appendChild(sub);
 
-    // ----- Cards 2x1 ------------------------------------------------------
+    // Cards 2x1
     const cards = document.createElement('div');
     cards.className = 'step-A3__cards';
 
@@ -400,7 +399,7 @@ export default {
 
     wrap.appendChild(cards);
 
-    // ----- CTA bottom (calque sur step-A1__cta-area pour memes proprietes)
+    // CTA bottom
     const ctaArea = document.createElement('div');
     ctaArea.className = 'step-A3__cta-area';
     const cta = document.createElement('button');
@@ -414,7 +413,7 @@ export default {
     stage.appendChild(wrap);
     domNodes.push(wrap);
 
-    // ----- Sequence d'apparition -------------------------------------------
+    // Sequence d'apparition
     requestAnimationFrame(() => {
       hero.classList.add('is-in');
       sub.classList.add('is-in');
@@ -435,7 +434,7 @@ export default {
       timers.push(tCta);
     });
 
-    // ----- CTA + raccourci Espace ------------------------------------------
+    // CTA + Espace
     const acknowledge = () => {
       if (cta.disabled) return;
       saveStepState('A3', { acknowledged: true });

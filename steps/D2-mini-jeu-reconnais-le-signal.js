@@ -15,8 +15,29 @@ const STYLE_TEXT = `
 .step-D2 {
   position: absolute;
   inset: 0;
-  padding: var(--s-4);
+  padding: var(--s-3) var(--s-5) var(--s-8) var(--s-5);
+  background: var(--bg);
   pointer-events: none;
+}
+
+/* Tuko_peda en bas-gauche (au-dessus du footer shell). Sprite reel, miroir
+   horizontal (scaleX -1) pour qu'il regarde vers la droite (vers le contenu). */
+.step-D2__tuko {
+  position: absolute;
+  bottom: 0;
+  left: var(--s-4);
+  width: clamp(160px, 15vw, 220px);
+  height: auto;
+  transform: scaleX(-1);
+  pointer-events: none;
+  z-index: 3;
+  animation: d2-tuko-bobbing 2.4s ease-in-out infinite;
+}
+
+@keyframes d2-tuko-bobbing {
+  /* Le scaleX -1 est dans chaque keyframe (piège du transform de centrage) */
+  0%, 100% { transform: scaleX(-1) translateY(0); }
+  50%      { transform: scaleX(-1) translateY(-6px); }
 }
 .step-D2__top {
   position: absolute;
@@ -152,45 +173,51 @@ const STYLE_TEXT = `
   0%, 100% { opacity: 0.2; transform: translate(-50%, -50%) scale(1); }
   50%      { opacity: 0.5; transform: translate(-50%, -50%) scale(1.05); }
 }
+/* Graph et timeline alignes sur LA MEME grille 12 cols (memes gap + padding).
+   Resultat : la cell jaune du graph a l'index i tombe pile sous le bit i
+   de la timeline. Et le nombre de cells jaunes du graph = nombre de 1
+   dans la timeline (manche 3 reposait sur cette deduction visuelle). */
 .step-D2__graph-area {
-  height: 60px;
   position: relative;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 4px;
+  padding: 6px;
   background: var(--bg-2);
+  border: var(--border-thin);
   border-radius: var(--r-sm);
-  overflow: hidden;
+  aspect-ratio: 12 / 3;
+}
+.step-D2__graph-cell {
+  /* eteinte par defaut */
+}
+.step-D2__graph-cell.is-on {
+  background: var(--accent-3);
+  border: 2px solid var(--ink);
+  border-radius: 3px 3px 0 0;
+  align-self: stretch;
 }
 .step-D2__graph-axis {
   position: absolute;
-  left: 0; right: 0; bottom: 0;
+  left: 6px; right: 6px; bottom: 4px;
   height: 2px;
   background: var(--ink);
   opacity: 0.4;
 }
-.step-D2__graph-bar {
-  position: absolute;
-  bottom: 2px;
-  background: var(--accent-1);
-  border-radius: 2px 2px 0 0;
-  height: 0;
-  width: 0;
-  transition: height 200ms var(--ease-out), width 200ms var(--ease-out);
-}
 .step-D2__timeline-bits {
-  display: flex;
-  gap: var(--s-1);
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 4px;
+  padding: 6px;
   font-family: var(--mono);
-  font-size: var(--t-h2);
   font-weight: 700;
-  justify-content: center;
-  flex-wrap: nowrap;
   position: relative;
 }
 .step-D2__bit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.4em;
-  height: 1.4em;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  font-size: clamp(20px, 1.8vw, 32px);
   border-radius: var(--r-sm);
   opacity: 0;
   transition: opacity 100ms var(--ease-out), background 200ms var(--ease-out);
@@ -304,72 +331,72 @@ const STYLE_TEXT = `
   25%      { transform: translateX(-6px); }
   75%      { transform: translateX(6px); }
 }
-/* Mini graph dans une option (manche 2) */
+/* Mini graph dans une option (manche 2) - meme structure 12 cols que le graph
+   principal pour coherence visuelle. */
 .step-D2__mini-graph {
-  position: relative;
-  width: 120px;
-  height: 50px;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2px;
+  padding: 4px;
+  width: 150px;
+  aspect-ratio: 12 / 3;
   background: var(--bg-2);
   border: var(--border-thin);
   border-radius: var(--r-sm);
   margin: 0 auto;
 }
-.step-D2__mini-graph__bar {
-  position: absolute;
-  bottom: 0;
-  background: var(--ink);
+.step-D2__mini-graph__cell {
+  /* eteinte par defaut */
+}
+.step-D2__mini-graph__cell.is-on {
+  background: var(--accent-3);
+  border: 1px solid var(--ink);
   border-radius: 2px 2px 0 0;
+  align-self: stretch;
 }
-.step-D2__mini-graph__bar--court { left: 30%; width: 12%; height: 30px; }
-.step-D2__mini-graph__bar--long { left: 15%; width: 60%; height: 30px; }
-.step-D2__mini-graph__bar--double-1 { left: 25%; width: 12%; height: 30px; }
-.step-D2__mini-graph__bar--double-2 { left: 50%; width: 12%; height: 30px; }
-/* Tuko principal bas-gauche (utilise .tuko-mascotte[data-position=bas-gauche] partage). */
-.step-D2 .tuko-mascotte[data-position="bas-gauche"] {
-  opacity: 0;
-  transform: translateX(-100px);
-}
-.step-D2 .tuko-mascotte[data-position="bas-gauche"].is-in {
-  animation: d2-tuko-main-in var(--d-slow) var(--ease-out) 300ms forwards;
-}
-@keyframes d2-tuko-main-in {
-  to { opacity: 1; transform: translateX(0); }
-}
-.step-D2__cta-anchor {
+/* CTA bas-centre : convention CTA (animation:none, sans chevron) */
+.step-D2__cta-area {
   position: absolute;
-  bottom: var(--s-4);
+  bottom: var(--s-3);
   left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
   pointer-events: auto;
   opacity: 0;
-  transform: translate(-50%, 30px);
-  transition: opacity var(--d-fast) var(--ease-out),
-              transform var(--d-fast) var(--ease-out);
 }
-.step-D2__cta-anchor.is-in {
-  opacity: 1;
-  transform: translate(-50%, 0);
+.step-D2__cta-area.is-in {
+  animation: d2-cta-area-in var(--d-fast) var(--ease-out) forwards;
+}
+@keyframes d2-cta-area-in {
+  to { opacity: 1; }
+}
+
+.step-D2__cta {
+  animation: none !important;
 }
 `;
 
 // Configuration des 3 manches.
+// Questions reformulees : claires, ton sympa et direct, accents corrects.
 const ROUNDS = [
   {
     press: 'long',
     timeline: [0,0,0,1,1,1,1,1,1,0,0,0],
     hidden: null,
-    question: 'CETTE PRESSE A COMBIEN DE 1 ?',
+    question: 'Quel signal vois-tu ?',
     type: 'kind',
     options: [
-      { id: 'court',  big: 'COURT',  sub: '1 fois',     correct: false },
-      { id: 'long',   big: 'LONG',   sub: 'plusieurs',  correct: true  },
-      { id: 'double', big: 'DOUBLE', sub: '2 paquets',  correct: false },
+      { id: 'court',  big: 'COURT',  sub: 'un petit pic',  correct: false },
+      { id: 'long',   big: 'LONG',   sub: 'une vague',     correct: true  },
+      { id: 'double', big: 'DOUBLE', sub: 'deux pics',     correct: false },
     ],
   },
   {
     press: 'double',
     timeline: [0,0,1,1,0,0,1,1,0,0,0,0],
     hidden: 'graph',
-    question: 'QUEL GRAPH MANQUE ?',
+    question: 'Quel graph va avec ?',
     type: 'graph',
     options: [
       { id: 'court',  graph: 'court',  correct: false },
@@ -381,7 +408,10 @@ const ROUNDS = [
     press: 'court',
     timeline: [0,0,0,1,1,0,0,0,0,0,0,0],
     hidden: 'timeline',
-    question: 'COMBIEN DE 1 DANS LA TIMELINE ?',
+    // Le graph reste visible : l'enfant compte les colonnes jaunes
+    // (alignees verticalement avec les positions des 1) pour deduire
+    // combien de 1 sont caches dans la timeline en dessous.
+    question: 'Compte les colonnes jaunes : combien de 1 ?',
     type: 'count',
     options: [
       { id: 'n2', big: '2', sub: 'deux',     correct: true  },
@@ -391,10 +421,12 @@ const ROUNDS = [
   },
 ];
 
-const PRESS_BAR_SHAPE = {
-  court:  { left: '18%', width: '12%', height: '36px' },
-  long:   { left: '12%', width: '60%', height: '42px' },
-  double: null, // 2 bars handled separately
+// Timelines representatives de chaque type de presse, pour les mini-graphs
+// dans les options manche 2. Memes patterns que ROUNDS.timeline correspondants.
+const MINI_TIMELINES = {
+  court:  [0,0,0,1,1,0,0,0,0,0,0,0],
+  long:   [0,0,0,1,1,1,1,1,1,0,0,0],
+  double: [0,0,1,1,0,0,1,1,0,0,0,0],
 };
 
 let scene = null;
@@ -449,49 +481,42 @@ function persistState() {
   navAPIRef.saveState({ steps: { D2: { round: currentRoundIdx + 1, score } } });
 }
 
-// Rendu mini-graph utilise dans options manche 2.
+// Mini-graph d'option (manche 2) : grid 12 cols miroir de MINI_TIMELINES[kind].
 function buildMiniGraph(kind) {
   const wrap = document.createElement('div');
   wrap.className = 'step-D2__mini-graph';
-  if (kind === 'court') {
-    const b = document.createElement('span');
-    b.className = 'step-D2__mini-graph__bar step-D2__mini-graph__bar--court';
-    wrap.appendChild(b);
-  } else if (kind === 'long') {
-    const b = document.createElement('span');
-    b.className = 'step-D2__mini-graph__bar step-D2__mini-graph__bar--long';
-    wrap.appendChild(b);
-  } else if (kind === 'double') {
-    const b1 = document.createElement('span');
-    b1.className = 'step-D2__mini-graph__bar step-D2__mini-graph__bar--double-1';
-    const b2 = document.createElement('span');
-    b2.className = 'step-D2__mini-graph__bar step-D2__mini-graph__bar--double-2';
-    wrap.appendChild(b1);
-    wrap.appendChild(b2);
-  }
+  const pattern = MINI_TIMELINES[kind] || [];
+  pattern.forEach((v) => {
+    const cell = document.createElement('div');
+    cell.className = 'step-D2__mini-graph__cell';
+    if (v === 1) cell.classList.add('is-on');
+    wrap.appendChild(cell);
+  });
   return wrap;
 }
 
-// Rendu de la grosse barre graph dans le layer graph.
+// Reset des cells du graph principal.
 function clearGraphArea() {
   if (!graphAreaEl) return;
-  Array.from(graphAreaEl.querySelectorAll('.step-D2__graph-bar')).forEach((b) => b.remove());
+  Array.from(graphAreaEl.querySelectorAll('.step-D2__graph-cell')).forEach((c) => {
+    c.classList.remove('is-on');
+  });
 }
-function drawGraphBar(press) {
-  clearGraphArea();
-  const make = (style) => {
-    const b = document.createElement('span');
-    b.className = 'step-D2__graph-bar';
-    Object.assign(b.style, style);
-    graphAreaEl.appendChild(b);
-    return b;
-  };
-  if (press === 'court') make(PRESS_BAR_SHAPE.court);
-  else if (press === 'long') make(PRESS_BAR_SHAPE.long);
-  else if (press === 'double') {
-    make({ left: '18%', width: '10%', height: '36px' });
-    make({ left: '38%', width: '10%', height: '36px' });
-  }
+
+// Construit/met a jour les 12 cells du graph selon la timeline du round.
+// Cells "is-on" = positions des 1 dans la timeline → ALIGNEMENT VERTICAL
+// pixel-perfect avec les bits de la timeline.
+function buildGraphCells(timeline) {
+  if (!graphAreaEl) return;
+  // Reset : retire cells existantes (mais garde l'axe pseudo-positionne)
+  Array.from(graphAreaEl.querySelectorAll('.step-D2__graph-cell')).forEach((c) => c.remove());
+  timeline.forEach((v, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'step-D2__graph-cell';
+    cell.dataset.idx = String(i);
+    if (v === 1) cell.classList.add('is-on');
+    graphAreaEl.appendChild(cell);
+  });
 }
 
 // Pulse compteur + increment (utilise .compteur-geant__value.is-pulsing partage).
@@ -553,11 +578,10 @@ function buildOptions(round) {
       sub.textContent = opt.sub;
       card.appendChild(sub);
     } else if (round.type === 'graph') {
+      // Manche 2 : juste le mini-graph, AUCUN label texte (sinon ca spoile
+      // la reponse - le nom 'court'/'long'/'double' donnait directement
+      // le type). L'enfant doit reconnaitre visuellement.
       card.appendChild(buildMiniGraph(opt.graph));
-      const sub = document.createElement('span');
-      sub.className = 'step-D2__option__sub';
-      sub.textContent = opt.graph;
-      card.appendChild(sub);
     } else if (round.type === 'count') {
       const big = document.createElement('span');
       big.className = 'step-D2__option__big';
@@ -602,10 +626,9 @@ function revealHidden() {
   if (!round.hidden) return;
   if (round.hidden === 'graph') {
     layerGraphEl?.classList.remove('is-hidden');
-    drawGraphBar(round.press);
+    // Cells deja construites par animateSignal/buildGraphCells. Juste reveler.
   } else if (round.hidden === 'timeline') {
     layerTimelineEl?.classList.remove('is-hidden');
-    // Apparition cascade des bits + jaillissement des 1 (cf. fiche manche 3)
     revealTimelineSpectacular(round);
   }
 }
@@ -643,8 +666,9 @@ function buildTimeline(round) {
 }
 
 function animateSignal(round, onDone) {
-  // 1. Trace du graph
-  if (round.hidden !== 'graph') drawGraphBar(round.press);
+  // 1. Construit les 12 cells du graph (si visible). Si cache, on les
+  //    construit quand meme mais le layer est cache via .is-hidden.
+  buildGraphCells(round.timeline);
   // 2. Cursor sweep + bits cascade
   cursorEl?.classList.add('is-on');
   const len = round.timeline.length;
@@ -790,12 +814,9 @@ function build(navAPI) {
   questionEl.textContent = ROUNDS[0].question;
   mainEl.appendChild(questionEl);
 
-  // Tuko mysterieux : composant partage [data-pose=mysterieux, data-position=inline]
-  tukoMystEl = document.createElement('div');
-  tukoMystEl.className = 'tuko-mascotte';
-  tukoMystEl.dataset.pose = 'mysterieux';
-  tukoMystEl.dataset.position = 'inline';
-  mainEl.appendChild(tukoMystEl);
+  // Tuko mysterieux inline retire : on a deja tuko_peda en bas-gauche,
+  // doublon visuel inutile. Reference garde pour compatibilite code.
+  tukoMystEl = null;
 
   // Double-vue
   doubleVueEl = document.createElement('div');
@@ -854,20 +875,21 @@ function build(navAPI) {
 
   wrap.appendChild(mainEl);
 
-  // Tuko principal bas-gauche : composant partage [data-pose=pedagogique].
-  const tukoMain = document.createElement('div');
-  tukoMain.className = 'tuko-mascotte';
-  tukoMain.dataset.pose = 'pedagogique';
-  tukoMain.dataset.position = 'bas-gauche';
+  // Tuko_peda en bas-gauche : sprite reel (PAS de .tuko-mascotte placeholder).
+  // scaleX(-1) gere par le CSS pour qu'il regarde vers la droite.
+  const tukoMain = document.createElement('img');
+  tukoMain.className = 'step-D2__tuko';
+  tukoMain.src = 'assets/sprites/tuko_peda.png';
+  tukoMain.alt = '';
   wrap.appendChild(tukoMain);
 
-  // CTA bas-centre (apparait apres manche 3)
+  // CTA bas-centre (apparait apres manche 3) - convention CTA
   ctaAnchorEl = document.createElement('div');
-  ctaAnchorEl.className = 'step-D2__cta-anchor';
+  ctaAnchorEl.className = 'step-D2__cta-area';
   ctaEl = document.createElement('button');
   ctaEl.type = 'button';
-  ctaEl.className = 'cta-primary';
-  ctaEl.textContent = '▶ DANS LA VRAIE VIE';
+  ctaEl.className = 'cta-primary step-D2__cta';
+  ctaEl.textContent = 'DANS LA VRAIE VIE';
   ctaAnchorEl.appendChild(ctaEl);
   wrap.appendChild(ctaAnchorEl);
 
@@ -877,9 +899,7 @@ function build(navAPI) {
   // Trigger entrance animations
   requestAnimationFrame(() => {
     questionEl.classList.add('is-in');
-    tukoMystEl.classList.add('is-in');
     doubleVueEl.classList.add('is-in');
-    tukoMain.classList.add('is-in');
   });
 
   // Boot first round after entrance

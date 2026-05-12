@@ -1,7 +1,7 @@
 // E4-epreuve-logique.js — Epreuve collective ET/OU (4 slides).
 //
 // Slide 1 : decouverte ET vs OU (2 cards opposees + exemples micro-ondes/cles).
-// Slide 2 : quiz eclair 5 questions, vote ET ou OU, score X/5.
+// Slide 2 : quiz eclair 10 questions, vote ET ou OU, score X/10.
 // Slide 3 : puzzle collectif ET sur matrice 8x8, revele digit5.
 // Slide 4 : puzzle collectif OU sur matrice 8x8, revele digit6.
 //
@@ -38,52 +38,130 @@ let styleNode = null;
    Config (digits par puzzle) — facile a tweaker sans toucher a la logique.
    -------------------------------------------------------------------------- */
 const PUZZLE_3 = {
-  // Regle : LIGNE 4 ET COLONNES D ou E (intersection)
-  // Index 8x8 (row*8+col). Ligne 4 = row 3 (0-indexed). Colonnes D, E = col 3, 4.
-  validPixels: new Set([3 * 8 + 3, 3 * 8 + 4]),
-  digit: '2',  // 2 pixels valides
-  rule: 'allume les pixels de la LIGNE 4 ET dans les COLONNES D ou E',
-  hints: [
-    'la ligne 4 c\'est la 4e en partant du haut',
-    'D et E sont les colonnes 4 et 5',
-    'l\'intersection : 2 pixels au centre',
-  ],
+  // Regle : LIGNE 4 ET (COLONNE D OU COLONNE E).
+  // OU non-exclusif : D4 seul, E4 seul, ou les deux valident.
+  validPixels: new Set([3 * 8 + 3, 3 * 8 + 4]), // D4, E4
+  digit: '2',
+  rule: 'allume LIGNE 4 ET (COLONNE D OU COLONNE E)',
   expectedCount: 2,
-};
-
-const PUZZLE_4 = {
-  // Regle : LIGNE 1 OU LIGNE 8 (lignes 0 ou 7 en 0-indexed)
-  validPixels: new Set([
-    ...Array.from({ length: 8 }, (_, i) => i),         // ligne 0 (= ligne 1 humaine)
-    ...Array.from({ length: 8 }, (_, i) => 7 * 8 + i), // ligne 7 (= ligne 8)
-  ]),
-  digit: '8',  // 8 pixels par ligne valide
-  rule: 'allume les pixels de la LIGNE 1 OU de la LIGNE 8',
-  warn: 'attention, plusieurs solutions sont valides : ligne 1, ligne 8, ou les deux !',
-  hints: [
-    'la ligne 1 c\'est la toute premiere en haut',
-    'la ligne 8 c\'est la toute derniere en bas',
-    'tu peux choisir l\'une, l\'autre, ou les deux',
-  ],
-  // Acceptable si une ligne complete OU les deux completes
   isCorrect(allumes) {
     if (allumes.size === 0) return false;
-    // toutes les cellules allumees doivent etre dans validPixels
-    for (const i of allumes) if (!PUZZLE_4.validPixels.has(i)) return false;
-    // au moins une ligne complete
-    const ligne1 = [0,1,2,3,4,5,6,7].every(i => allumes.has(i));
-    const ligne8 = [56,57,58,59,60,61,62,63].every(i => allumes.has(i));
-    return ligne1 || ligne8;
+    // Tout allume doit etre dans D4/E4 (rien d'autre permis)
+    for (const i of allumes) if (!this.validPixels.has(i)) return false;
+    return true;
   },
-  expectedCount: 8,
+  hintCells(idx) {
+    // idx 0 : ligne 4 entiere
+    if (idx === 0) return new Set([24,25,26,27,28,29,30,31]);
+    // idx 1 : colonnes D + E entieres
+    if (idx === 1) return new Set([3,11,19,27,35,43,51,59, 4,12,20,28,36,44,52,60]);
+    // idx 2 : cibles finales
+    if (idx === 2) return new Set(this.validPixels);
+    return new Set();
+  },
 };
 
+// Slide 4 : mini-parcours de 4 sous-puzzles (le dernier = pikachu pixel art).
+// L'utilisateur progresse de 1/4 a 4/4. Quand un sub est valide, on passe
+// automatiquement au suivant. Sub 4 valide → digit6 revele.
+//
+// Patterns 8x8 (index = row * 8 + col, 0..63).
+const PUZZLE_4_SUBS = [
+  {
+    // 1/4 : OU simple horizontal — LIGNE 1 OU LIGNE 8.
+    // Une ligne complete suffit, les deux valident aussi.
+    rule: 'allume la LIGNE 1 OU la LIGNE 8',
+    warn: 'une ligne suffit.',
+    validPixels: new Set([
+      ...Array.from({ length: 8 }, (_, i) => i),
+      ...Array.from({ length: 8 }, (_, i) => 7 * 8 + i),
+    ]),
+    expectedCount: 8,
+    isCorrect(allumes) {
+      if (allumes.size === 0) return false;
+      for (const i of allumes) if (!this.validPixels.has(i)) return false;
+      const l1 = [0,1,2,3,4,5,6,7].every(i => allumes.has(i));
+      const l8 = [56,57,58,59,60,61,62,63].every(i => allumes.has(i));
+      return l1 || l8;
+    },
+    hintCells(idx) {
+      if (idx === 0) return new Set([0,1,2,3,4,5,6,7]);
+      if (idx === 1) return new Set([56,57,58,59,60,61,62,63]);
+      if (idx === 2) return new Set(this.validPixels);
+      return new Set();
+    },
+  },
+  {
+    // 2/4 : OU simple vertical — COLONNE A OU COLONNE H.
+    // Une colonne complete suffit, les deux valident aussi.
+    rule: 'allume la COLONNE A OU la COLONNE H',
+    warn: 'une colonne suffit.',
+    validPixels: new Set([
+      ...[0,8,16,24,32,40,48,56],
+      ...[7,15,23,31,39,47,55,63],
+    ]),
+    expectedCount: 8,
+    isCorrect(allumes) {
+      if (allumes.size === 0) return false;
+      for (const i of allumes) if (!this.validPixels.has(i)) return false;
+      const cA = [0,8,16,24,32,40,48,56].every(i => allumes.has(i));
+      const cH = [7,15,23,31,39,47,55,63].every(i => allumes.has(i));
+      return cA || cH;
+    },
+    hintCells(idx) {
+      if (idx === 0) return new Set([0,8,16,24,32,40,48,56]);
+      if (idx === 1) return new Set([7,15,23,31,39,47,55,63]);
+      if (idx === 2) return new Set(this.validPixels);
+      return new Set();
+    },
+  },
+  {
+    // 3/4 : ET d'OU — LIGNE 4 ET (COLONNE C OU COLONNE F).
+    // Valides : C4, F4. N'importe quelle combinaison non-vide.
+    rule: 'allume LIGNE 4 ET (COLONNE C OU COLONNE F)',
+    warn: 'une seule case peut suffire.',
+    validPixels: new Set([3 * 8 + 2, 3 * 8 + 5]), // C4=26, F4=29
+    expectedCount: 2,
+    isCorrect(allumes) {
+      if (allumes.size === 0) return false;
+      for (const i of allumes) if (!this.validPixels.has(i)) return false;
+      return true;
+    },
+    hintCells(idx) {
+      if (idx === 0) return new Set([24,25,26,27,28,29,30,31]); // ligne 4
+      if (idx === 1) return new Set([2,10,18,26,34,42,50,58, 5,13,21,29,37,45,53,61]); // cols C+F
+      if (idx === 2) return new Set(this.validPixels);
+      return new Set();
+    },
+  },
+  {
+    // 4/4 : MODE PIXEL ART LIBRE.
+    // Palette 4 couleurs (jaune / rose / noir / marron) cliquable.
+    // Pas de pattern de validation : l'enfant dessine, l'animateur valide
+    // visuellement. Le bouton "valider" donne directement le digit final.
+    rule: 'reproduis le pixel art',
+    expectedCount: 0,
+    isFreeMode: true,
+    isCorrect() { return true; }, // toujours OK : validation libre
+    hintCells() { return new Set(); },
+  },
+];
+
+// Backward-compat : ancien PUZZLE_4 = on prend le 1er sub par defaut pour
+// que getPuzzle(4) renvoie quelque chose si on appelle hors contexte sub.
+const PUZZLE_4 = PUZZLE_4_SUBS[0];
+
 const QUIZ_QUESTIONS = [
-  { emoji: '🥞', text: 'pour faire des pancakes, il faut de la farine __ des oeufs.', answer: 'ET' },
-  { emoji: '🔑', text: 'rentrer chez moi : ma cle __ celle de mes parents.',          answer: 'OU' },
-  { emoji: '🚦', text: 'traverser la rue : feu vert __ pas de voiture.',              answer: 'ET' },
-  { emoji: '🍕', text: 'commander une pizza : tomate __ champignons.',                answer: 'OU' },
-  { emoji: '📱', text: 'allumer mon telephone : batterie __ bouton power.',           answer: 'ET' },
+  { emoji: '🥞',  text: 'pour faire des pancakes : de la farine __ des œufs.',                     answer: 'ET' },
+  { emoji: '🔑',  text: 'pour rentrer chez toi : ta clé __ celle de tes parents.',                 answer: 'OU' },
+  { emoji: '🚲',  text: 'pour rouler à vélo : deux roues __ un guidon.',                           answer: 'ET' },
+  { emoji: '🍦',  text: 'choisir une glace : chocolat __ vanille.',                                answer: 'OU' },
+  { emoji: '📱',  text: 'pour allumer ton téléphone : de la batterie __ le bouton power.',         answer: 'ET' },
+  { emoji: '🌧️', text: 'te protéger de la pluie : un parapluie __ une capuche.',                  answer: 'OU' },
+  { emoji: '🚌',  text: 'pour aller à l\'école : à pied __ en bus.',                               answer: 'OU' },
+  { emoji: '✏️', text: 'pour écrire un mot : un stylo __ du papier.',                              answer: 'ET' },
+  { emoji: '✈️', text: 'partir en voyage : en avion __ en train.',                                 answer: 'OU' },
+  { emoji: '📺',  text: 'pour regarder un dessin animé : allumer la télé __ choisir la chaîne.',   answer: 'ET' },
 ];
 
 let state = {
@@ -94,11 +172,22 @@ let state = {
   puzzle4Solved: false,
   puzzle3Pixels: [],
   puzzle4Pixels: [],
+  puzzle4SubIdx: 0,        // 0..3 : sub-puzzle courant (slide 4)
+  puzzle4FreeColors: {},   // {idx: 'jaune'|'rose'|'noir'|'marron'} pour le sub 4 (mode libre)
   hints3: [false, false, false],
   hints4: [false, false, false],
   digit5: null,
   digit6: null,
 };
+
+// Couleur courante de la palette (mode libre / sub 4).
+// 4 teintes inspirees du pixel art reference fourni par l'utilisateur :
+//   jaune  vif clair (corps)        : #FFD93D
+//   jaune2 ombre / joues douces     : #E5A82E
+//   rouge  vif (joues)              : #FF1F1F
+//   noir   contour / yeux / oreilles : #1A1A1A
+let currentColor = 'jaune';
+const PALETTE_COLORS = ['jaune', 'jaune2', 'rouge', 'noir'];
 
 const STYLE_ID = 'step-E4-style';
 
@@ -193,10 +282,6 @@ const CSS = `
   text-transform: lowercase;
   opacity: 0.85;
 }
-.step-E4__et-ou-illu {
-  width: 100%;
-  min-height: 180px;
-}
 
 /* ---- Slide 2 : quiz ET ou OU ---- */
 .step-E4__quiz-score {
@@ -222,7 +307,7 @@ const CSS = `
   opacity: 0.6;
 }
 .step-E4__quiz-card {
-  width: min(700px, 92%);
+  width: min(1500px, 96%);
   padding: var(--s-4);
   background: var(--paper);
   border: var(--border);
@@ -244,6 +329,9 @@ const CSS = `
   margin: 0;
   line-height: 1.3;
   text-transform: lowercase;
+  text-align: center;
+  text-wrap: balance;
+  max-width: 100%;
 }
 .step-E4__quiz-vote {
   display: flex;
@@ -263,35 +351,6 @@ const CSS = `
 .step-E4__quiz-card-vote.is-wrong {
   animation: e4-shake 0.4s ease-in-out;
 }
-.step-E4__quiz-bilan {
-  display: flex;
-  gap: var(--s-2);
-  margin-top: var(--s-3);
-}
-.step-E4__quiz-bilan-item {
-  display: grid;
-  place-items: center;
-  width: 64px;
-  height: 64px;
-  font-size: var(--t-h2);
-  background: var(--paper);
-  border: var(--border-thin);
-  border-radius: var(--r-md);
-  position: relative;
-  opacity: 0;
-  transform: scale(0);
-  animation: e4-pop-bilan var(--d-fast) var(--ease-bounce) forwards;
-}
-.step-E4__quiz-bilan-item::after {
-  content: attr(data-tag);
-  position: absolute;
-  bottom: -22px;
-  font-family: var(--display);
-  font-size: var(--t-small);
-  font-weight: 900;
-}
-.step-E4__quiz-bilan-item[data-tag="✓"]::after { color: var(--accent-1); }
-.step-E4__quiz-bilan-item[data-tag="✗"]::after { color: var(--accent-4); }
 
 /* ---- Slides 3 & 4 : puzzles ---- */
 .step-E4__puzzle {
@@ -343,44 +402,60 @@ const CSS = `
 /* Toggle ET/OU : composant partage .bouton-bascule (passif, montre le mode courant) */
 .step-E4__toggle { margin-left: auto; }
 
-/* Matrice host (la matrice elle-meme = composant partage .matrice-8x8.is-cliquable) */
+/* Matrice host : centralise les dimensions pour que coords + row-labels
+   utilisent EXACTEMENT les memes vars que .matrice-8x8 (sinon decalage). */
 .step-E4__matrix-host {
   display: flex;
   flex-direction: column;
   gap: var(--s-1);
+  --m-size: min(520px, 48vh);
+  --m-gap: 6px;
+  --m-padding: 14px;
+}
+/* Force la matrice partagee a utiliser nos vars locales */
+.step-E4__matrix-host .matrice-8x8 {
+  --matrice-8x8-size: var(--m-size);
+  --matrice-8x8-gap: var(--m-gap);
+  --matrice-8x8-padding: var(--m-padding);
 }
 
-/* Coordonnees A-H / 1-8 alignees avec la matrice partagee (vars --matrice-8x8-*) */
+/* Header coords A-H : meme grille que la matrice (8 cols + meme gap + meme padding) */
 .step-E4__matrix-coords {
   display: grid;
-  grid-template-columns: 28px var(--matrice-8x8-size, 440px);
-  gap: var(--matrice-8x8-gap, 6px);
-  font-family: var(--mono);
-  font-size: var(--t-tiny);
-  letter-spacing: 0.18em;
-  opacity: 0.5;
+  grid-template-columns: 40px var(--m-size);
+  gap: var(--m-gap);
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink);
   text-transform: uppercase;
   margin-bottom: 2px;
 }
 .step-E4__matrix-coords-inner {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: var(--matrice-8x8-gap, 6px);
-  padding: 0 var(--matrice-8x8-padding, 14px);
+  gap: var(--m-gap);
+  padding: 0 var(--m-padding);
+  box-sizing: border-box;
 }
 .step-E4__matrix-coords-inner > span {
   text-align: center;
 }
+
+/* Colonne row labels 1-8 : meme hauteur + meme gap + meme padding vertical */
 .step-E4__matrix-row-label {
   display: grid;
   grid-template-rows: repeat(8, 1fr);
-  gap: var(--matrice-8x8-gap, 6px);
-  padding: var(--matrice-8x8-padding, 14px) 0;
-  height: var(--matrice-8x8-size, 440px);
-  font-family: var(--mono);
-  font-size: var(--t-tiny);
-  letter-spacing: 0.18em;
-  opacity: 0.5;
+  gap: var(--m-gap);
+  padding: var(--m-padding) 0;
+  height: var(--m-size);
+  box-sizing: border-box;
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink);
 }
 .step-E4__matrix-row-label > span {
   display: grid;
@@ -388,8 +463,8 @@ const CSS = `
 }
 .step-E4__matrix-with-rows {
   display: grid;
-  grid-template-columns: 28px auto;
-  gap: var(--matrice-8x8-gap, 6px);
+  grid-template-columns: 40px auto;
+  gap: var(--m-gap);
   align-items: start;
 }
 
@@ -400,39 +475,24 @@ const CSS = `
   gap: var(--s-3);
   align-items: stretch;
 }
-.step-E4__side-tag {
-  font-family: var(--mono);
-  font-size: var(--t-tiny);
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  opacity: 0.6;
-  margin: 0;
-}
-.step-E4__hints {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-1);
-}
-.step-E4__hints-row {
-  display: flex;
-  gap: var(--s-1);
-}
-/* Hint lockers : composant partage .cadenas (taille reduite scope local) */
-.step-E4__hint-locker {
-  --cadenas-size: 56px;
-}
-.step-E4__hint-bubble {
-  font-family: var(--display);
-  font-size: var(--t-body);
-  font-weight: 600;
+.step-E4__sub-progress {
+  margin-left: auto;
+  padding: var(--s-1) var(--s-2);
   background: var(--accent-3);
-  color: var(--ink);
-  border: var(--border-thin);
+  border: var(--border);
   border-radius: var(--r-md);
-  padding: var(--s-1);
-  text-align: left;
-  animation: e4-hint-drop var(--d-normal) var(--ease-bounce);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--display);
+  font-size: var(--t-h2);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
+/* Le toggle ET/OU est avant le sub-progress, on lui retire son margin-left:auto */
+.step-E4__rule .step-E4__toggle ~ .step-E4__sub-progress { margin-left: var(--s-2); }
+.step-E4__rule:has(.step-E4__sub-progress) .step-E4__toggle { margin-left: auto; }
 .step-E4__count {
   font-family: var(--display);
   font-size: var(--t-h2);
@@ -453,7 +513,7 @@ const CSS = `
   gap: var(--s-2);
   margin-top: var(--s-1);
 }
-.step-E4__btn-clear, .step-E4__btn-validate {
+.step-E4__btn-clear, .step-E4__btn-validate, .step-E4__btn-hint {
   flex: 1;
   font-family: var(--display);
   font-size: var(--t-body);
@@ -463,10 +523,24 @@ const CSS = `
   border: var(--border);
   border-radius: var(--r-md);
   cursor: var(--cursor-pointer);
+  transition: transform var(--d-fast) var(--ease-out),
+              box-shadow var(--d-fast) var(--ease-out);
 }
 .step-E4__btn-clear {
   background: var(--paper);
   color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+.step-E4__btn-hint {
+  background: var(--accent-3);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+.step-E4__btn-hint:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow); }
+.step-E4__btn-hint:disabled {
+  opacity: 0.4;
+  cursor: var(--cursor-default);
+  transform: none;
   box-shadow: var(--shadow-sm);
 }
 .step-E4__btn-validate {
@@ -476,11 +550,53 @@ const CSS = `
 }
 .step-E4__btn-validate:hover { transform: translate(-3px, -3px); box-shadow: var(--shadow-lg); }
 
-/* Code en cours (6 cellules en bas du puzzle) */
+/* === Mode libre (sub 4/4 Pikachu) : palette 4 couleurs === */
+.step-E4__palette {
+  display: none;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+  justify-content: center;
+}
+.step-E4__slide--4.is-free-mode .step-E4__palette { display: flex; }
+.step-E4__slide--4.is-free-mode .step-E4__btn-hint  { display: none; }
+
+.step-E4__color-btn {
+  width: 56px;
+  height: 56px;
+  border: 3px solid var(--ink);
+  border-radius: var(--r-md);
+  box-shadow: 4px 4px 0 var(--ink);
+  cursor: var(--cursor-pointer);
+  transition: transform var(--d-fast) var(--ease-out),
+              box-shadow var(--d-fast) var(--ease-out);
+}
+.step-E4__color-btn[data-color="jaune"]  { background: #FFD93D; }
+.step-E4__color-btn[data-color="jaune2"] { background: #E5A82E; }
+.step-E4__color-btn[data-color="rouge"]  { background: #FF1F1F; }
+.step-E4__color-btn[data-color="noir"]   { background: #1A1A1A; }
+
+.step-E4__color-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+.step-E4__color-btn.is-active {
+  transform: translate(-3px, -3px);
+  box-shadow: 7px 7px 0 var(--ink), inset 0 0 0 4px var(--paper);
+}
+
+/* Pixels coloriables : 4 teintes locales sur la matrice */
+.step-E4__pix.is-on-jaune  { background: #FFD93D; box-shadow: 0 0 10px rgba(255,217,61,0.55); }
+.step-E4__pix.is-on-jaune2 { background: #E5A82E; box-shadow: 0 0 8px rgba(229,168,46,0.45); }
+.step-E4__pix.is-on-rouge  { background: #FF1F1F; box-shadow: 0 0 10px rgba(255,31,31,0.55); }
+.step-E4__pix.is-on-noir   { background: #1A1A1A; }
+
+/* Mode libre : retire le compteur "X / 0 pixels allumes" (inutile sans cible) */
+.step-E4__slide--4.is-free-mode .step-E4__count,
+.step-E4__slide--4.is-free-mode .step-E4__count-sub { display: none; }
+
+/* Code en cours (6 cellules) — en HAUT, sous la barre de progression
+   pour ne pas chevaucher le CTA bottom */
 .step-E4__code {
   position: absolute;
   left: 50%;
-  bottom: 12px;
+  top: var(--s-7);
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
@@ -492,9 +608,17 @@ const CSS = `
   gap: var(--s-1);
 }
 .step-E4__code-cell {
-  width: 56px;
-  height: 72px;
-  font-size: var(--t-h1);
+  width: 96px;
+  height: 124px;
+  font-size: 76px;
+  line-height: 1;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+}
+.step-E4__code-cell.is-filled {
+  font-size: 76px;
+  line-height: 1;
 }
 .step-E4__code-cell.is-pulsing { animation: e4-pulse 1s ease-in-out infinite; }
 .step-E4__code-line {
@@ -506,11 +630,13 @@ const CSS = `
   margin: 0;
 }
 
-/* CTA next slide / final */
+/* CTA next slide / final : centre bas, 128px du footer (convention) */
 .step-E4__cta-host {
   position: absolute;
-  bottom: 12px;
-  right: var(--s-6);
+  bottom: var(--s-8);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
 }
 .step-E4__cta {
   opacity: 0;
@@ -539,13 +665,6 @@ const CSS = `
   40%      { transform: translateX(5px); }
   60%      { transform: translateX(-4px); }
   80%      { transform: translateX(3px); }
-}
-@keyframes e4-pop-bilan {
-  to { transform: scale(1); opacity: 1; }
-}
-@keyframes e4-hint-drop {
-  0%   { transform: translateY(-15px); opacity: 0; }
-  100% { transform: translateY(0);     opacity: 1; }
 }
 
 /* Reward effect (digit revele migrant) */
@@ -634,10 +753,7 @@ function buildSlide1() {
   opET.className = 'step-E4__et-ou-card__op'; opET.textContent = 'ET';
   const motoET = document.createElement('p');
   motoET.className = 'step-E4__et-ou-card__motto'; motoET.textContent = 'les deux. ou rien.';
-  const illuET = document.createElement('div');
-  illuET.className = 'placeholder-image step-E4__et-ou-illu';
-  illuET.textContent = '[ MICRO-ONDES porte fermee ET bouton START ]';
-  cardET.appendChild(opET); cardET.appendChild(motoET); cardET.appendChild(illuET);
+  cardET.appendChild(opET); cardET.appendChild(motoET);
 
   const cardOU = document.createElement('div');
   cardOU.className = 'card-clickable step-E4__et-ou-card step-E4__et-ou-card--ou';
@@ -645,10 +761,7 @@ function buildSlide1() {
   opOU.className = 'step-E4__et-ou-card__op'; opOU.textContent = 'OU';
   const motoOU = document.createElement('p');
   motoOU.className = 'step-E4__et-ou-card__motto'; motoOU.textContent = 'une suffit. deux aussi.';
-  const illuOU = document.createElement('div');
-  illuOU.className = 'placeholder-image step-E4__et-ou-illu';
-  illuOU.textContent = '[ CLES MAISON : ta cle OU celle de tes parents ]';
-  cardOU.appendChild(opOU); cardOU.appendChild(motoOU); cardOU.appendChild(illuOU);
+  cardOU.appendChild(opOU); cardOU.appendChild(motoOU);
 
   wrap.appendChild(cardET); wrap.appendChild(cardOU);
   slide.appendChild(wrap);
@@ -701,12 +814,6 @@ function buildSlide2() {
   vote.appendChild(voteET); vote.appendChild(voteOU);
   card.appendChild(vote);
 
-  // Bilan en bas (5 emojis)
-  const bilan = document.createElement('div');
-  bilan.className = 'step-E4__quiz-bilan';
-  bilan.dataset.role = 'bilan';
-  card.appendChild(bilan);
-
   slide.appendChild(card);
   return slide;
 }
@@ -745,6 +852,15 @@ function buildPuzzleSlide(slideNum, puzzle, opTag) {
   toggle.appendChild(lblET); toggle.appendChild(pad); toggle.appendChild(lblOU);
   rule.appendChild(toggle);
 
+  // Slide 4 : compteur de sub-puzzle (1/4 → 4/4)
+  if (slideNum === 4) {
+    const subTag = document.createElement('span');
+    subTag.className = 'step-E4__sub-progress';
+    subTag.dataset.role = 'sub-progress';
+    subTag.textContent = `${(state.puzzle4SubIdx ?? 0) + 1} / ${PUZZLE_4_SUBS.length}`;
+    rule.appendChild(subTag);
+  }
+
   wrap.appendChild(rule);
 
   // Optional warning
@@ -758,10 +874,6 @@ function buildPuzzleSlide(slideNum, puzzle, opTag) {
   // Matrix host
   const matrixHost = document.createElement('div');
   matrixHost.className = 'step-E4__matrix-host';
-  const head = document.createElement('p');
-  head.className = 'step-E4__side-tag';
-  head.textContent = 'matrice 8 x 8';
-  matrixHost.appendChild(head);
 
   // Coords header (col labels A-H) — grille interne aligne sur .matrice-8x8
   const matrixCoords = document.createElement('div');
@@ -803,36 +915,10 @@ function buildPuzzleSlide(slideNum, puzzle, opTag) {
 
   wrap.appendChild(matrixHost);
 
-  // Side panel : hints + actions + count
+  // Side panel : count + actions (indices retires : expliques a l'oral,
+  // seuls les .is-hint sur la matrice restent comme indice visuel)
   const side = document.createElement('div');
   side.className = 'step-E4__side';
-
-  const hHead = document.createElement('p');
-  hHead.className = 'step-E4__side-tag';
-  hHead.textContent = 'indices';
-  side.appendChild(hHead);
-
-  const hints = document.createElement('div');
-  hints.className = 'step-E4__hints';
-  const hintsRow = document.createElement('div');
-  hintsRow.className = 'step-E4__hints-row';
-  for (let i = 0; i < 3; i++) {
-    const lock = document.createElement('button');
-    lock.type = 'button';
-    lock.className = 'cadenas cadenas--ferme is-pulsing step-E4__hint-locker';
-    lock.dataset.hintIdx = String(i);
-    lock.setAttribute('aria-label', `Indice ${i + 1}`);
-    hintsRow.appendChild(lock);
-  }
-  hints.appendChild(hintsRow);
-  const revealed = document.createElement('div');
-  revealed.dataset.role = 'hints-revealed';
-  revealed.style.display = 'flex';
-  revealed.style.flexDirection = 'column';
-  revealed.style.gap = 'var(--s-1)';
-  revealed.style.minHeight = '40px';
-  hints.appendChild(revealed);
-  side.appendChild(hints);
 
   const cnt = document.createElement('p');
   cnt.className = 'step-E4__count';
@@ -846,6 +932,12 @@ function buildPuzzleSlide(slideNum, puzzle, opTag) {
 
   const actions = document.createElement('div');
   actions.className = 'step-E4__actions';
+  const hint = document.createElement('button');
+  hint.type = 'button';
+  hint.className = 'step-E4__btn-hint';
+  hint.dataset.role = 'hint';
+  hint.textContent = 'indice';
+  actions.appendChild(hint);
   const clear = document.createElement('button');
   clear.type = 'button';
   clear.className = 'step-E4__btn-clear';
@@ -858,6 +950,23 @@ function buildPuzzleSlide(slideNum, puzzle, opTag) {
   validate.textContent = 'valider';
   actions.appendChild(validate);
   side.appendChild(actions);
+
+  // Palette de couleurs (visible uniquement en mode libre sub Pikachu)
+  if (slideNum === 4) {
+    const palette = document.createElement('div');
+    palette.className = 'step-E4__palette';
+    palette.dataset.role = 'palette';
+    PALETTE_COLORS.forEach(col => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'step-E4__color-btn';
+      btn.dataset.color = col;
+      btn.setAttribute('aria-label', col);
+      if (col === currentColor) btn.classList.add('is-active');
+      palette.appendChild(btn);
+    });
+    side.appendChild(palette);
+  }
 
   wrap.appendChild(side);
   slide.appendChild(wrap);
@@ -915,9 +1024,12 @@ function renderQuizQuestion(slide) {
   });
 }
 
+let quizLocked = false;
 function answerQuiz(slide, root, vote) {
   const q = QUIZ_QUESTIONS[state.quizIdx];
   if (!q) return;
+  if (quizLocked) return; // empeche le spam-clic pendant le delai entre 2 questions
+  quizLocked = true;
   const cards = slide.querySelectorAll('.step-E4__quiz-card-vote');
   const chosen = [...cards].find(c => c.dataset.vote === vote);
   const correct = vote === q.answer;
@@ -928,15 +1040,6 @@ function answerQuiz(slide, root, vote) {
   } else {
     chosen?.classList.add('is-wrong');
     play('error');
-  }
-  // Bilan emoji
-  const bilan = slide.querySelector('[data-role="bilan"]');
-  if (bilan) {
-    const item = document.createElement('div');
-    item.className = 'step-E4__quiz-bilan-item';
-    item.textContent = q.emoji;
-    item.dataset.tag = correct ? '✓' : '✗';
-    bilan.appendChild(item);
   }
 
   // Pulse score
@@ -958,6 +1061,7 @@ function answerQuiz(slide, root, vote) {
       renderQuizQuestion(slide);
     }
     saveStepState('E4', { ...state });
+    quizLocked = false;
   }, 900);
   timers.push(t);
 }
@@ -978,7 +1082,12 @@ function digitKey(slideNum) {
   return slideNum === 3 ? 'digit5' : 'digit6';
 }
 
-function getPuzzle(slideNum) { return slideNum === 3 ? PUZZLE_3 : PUZZLE_4; }
+function getPuzzle(slideNum) {
+  if (slideNum === 3) return PUZZLE_3;
+  // Slide 4 : sub-puzzle en cours (4 patterns successifs)
+  const idx = Math.min(state.puzzle4SubIdx ?? 0, PUZZLE_4_SUBS.length - 1);
+  return PUZZLE_4_SUBS[idx];
+}
 
 function refreshPuzzleCount(slide, slideNum) {
   const pixels = state[pixelsKey(slideNum)];
@@ -988,64 +1097,156 @@ function refreshPuzzleCount(slide, slideNum) {
 
 function refreshPuzzlePixels(slide, slideNum) {
   const pixels = new Set(state[pixelsKey(slideNum)]);
+  const puzzle = getPuzzle(slideNum);
+  const freeMode = puzzle?.isFreeMode;
   slide.querySelectorAll('.step-E4__pix').forEach(p => {
     const idx = +p.dataset.idx;
-    p.classList.toggle('is-on', pixels.has(idx));
-    p.classList.remove('is-wrong', 'is-blinking', 'is-hint');
+    p.classList.remove('is-on', 'is-on-jaune', 'is-on-jaune2', 'is-on-rouge', 'is-on-noir',
+                       'is-wrong', 'is-blinking', 'is-hint');
+    if (pixels.has(idx)) {
+      p.classList.add('is-on');
+      if (freeMode) {
+        const col = state.puzzle4FreeColors[idx] || 'jaune';
+        p.classList.add(`is-on-${col}`);
+      }
+    }
   });
 }
 
 function togglePixel(slide, slideNum, idx) {
   if (state[solvedKey(slideNum)]) return;
+  const puzzle = getPuzzle(slideNum);
   const arr = state[pixelsKey(slideNum)];
   const pos = arr.indexOf(idx);
   if (pos >= 0) arr.splice(pos, 1);
   else arr.push(idx);
   state[pixelsKey(slideNum)] = arr;
+
+  // Mode libre (sub Pikachu) : on memorise la couleur choisie par pixel.
+  if (puzzle?.isFreeMode) {
+    if (arr.includes(idx)) state.puzzle4FreeColors[idx] = currentColor;
+    else delete state.puzzle4FreeColors[idx];
+  }
   saveStepState('E4', { ...state });
   refreshPuzzleCount(slide, slideNum);
+
   const cell = slide.querySelector(`.step-E4__pix[data-idx="${idx}"]`);
-  cell?.classList.toggle('is-on', arr.includes(idx));
+  const isOn = arr.includes(idx);
+  if (cell) {
+    // Reset les classes couleur, puis appliquer is-on (+ couleur si free mode)
+    cell.classList.remove('is-on', 'is-on-jaune', 'is-on-jaune2', 'is-on-rouge', 'is-on-noir');
+    if (isOn) {
+      cell.classList.add('is-on');
+      if (puzzle?.isFreeMode) cell.classList.add(`is-on-${currentColor}`);
+    }
+    if (isOn) cell.classList.remove('is-hint');
+    if (!isOn) cell.classList.remove('is-wrong');
+  }
   play('tic');
 }
 
 function clearPixels(slide, slideNum) {
   if (state[solvedKey(slideNum)]) return;
   state[pixelsKey(slideNum)] = [];
+  // Reset les indices reveles : la matrice repart vierge,
+  // le bouton "indice" redevient cliquable.
+  state[hintsKey(slideNum)] = [false, false, false];
+  // Mode libre (sub Pikachu) : reset aussi les couleurs memorisees
+  const puzzle = getPuzzle(slideNum);
+  if (puzzle?.isFreeMode) state.puzzle4FreeColors = {};
   saveStepState('E4', { ...state });
   refreshPuzzlePixels(slide, slideNum);
   refreshPuzzleCount(slide, slideNum);
+  // Retirer .is-hint et .is-wrong de toutes les cellules
+  slide.querySelectorAll('.step-E4__pix').forEach(p => {
+    p.classList.remove('is-hint', 'is-wrong', 'is-blinking');
+  });
+  // Re-enable le bouton indice
+  const hintBtn = slide.querySelector('[data-role="hint"]');
+  if (hintBtn) hintBtn.disabled = false;
   play('whoosh');
 }
 
 function validatePuzzle(slide, root, slideNum) {
   const allumes = new Set(state[pixelsKey(slideNum)]);
   const puzzle = getPuzzle(slideNum);
-  let correct;
-  if (slideNum === 3) {
-    // ET : exactement les pixels valides
-    correct = allumes.size === puzzle.validPixels.size
-              && [...puzzle.validPixels].every(i => allumes.has(i));
-  } else {
-    correct = puzzle.isCorrect(allumes);
-  }
+  // Chaque puzzle/sub a son isCorrect (logique propre OU/ET).
+  const correct = puzzle.isCorrect
+    ? puzzle.isCorrect(allumes)
+    : (allumes.size === puzzle.validPixels.size
+       && [...puzzle.validPixels].every(i => allumes.has(i)));
   if (correct) {
-    state[solvedKey(slideNum)] = true;
-    state[digitKey(slideNum)] = puzzle.digit;
-    saveStepState('E4', { ...state });
-    fireRevealDigit(slide, slideNum, puzzle.digit);
+    if (slideNum === 4) {
+      // Slide 4 : sub-puzzles. On avance, sauf si on est au dernier.
+      const isLastSub = state.puzzle4SubIdx >= PUZZLE_4_SUBS.length - 1;
+      if (isLastSub) {
+        state.puzzle4Solved = true;
+        state.digit6 = '6';
+        saveStepState('E4', { ...state });
+        fireRevealDigit(slide, slideNum, '6');
+      } else {
+        // Animation flash success puis on passe au sub suivant
+        play('success');
+        const tNext = setTimeout(() => {
+          state.puzzle4SubIdx += 1;
+          state.puzzle4Pixels = [];
+          state.hints4 = [false, false, false];
+          saveStepState('E4', { ...state });
+          resetSlide4ForNextSub(slide);
+        }, 700);
+        timers.push(tNext);
+      }
+    } else {
+      state[solvedKey(slideNum)] = true;
+      state[digitKey(slideNum)] = puzzle.digit ?? '5';
+      saveStepState('E4', { ...state });
+      fireRevealDigit(slide, slideNum, puzzle.digit ?? '5');
+    }
   } else {
-    // Highlight wrong + missing (composant partage : .is-wrong / .is-blinking)
+    // Erreur : flag wrong sur les pixels en trop (allumes mais pas valides).
+    // Pas de .is-blinking auto sur les bons pixels manquants : l'indice se
+    // demande explicitement via le bouton 'indice'.
     slide.querySelectorAll('.step-E4__pix').forEach(p => {
       const idx = +p.dataset.idx;
       const isOn = allumes.has(idx);
-      const expectedOn = (slideNum === 3) ? puzzle.validPixels.has(idx) : false;
       p.classList.remove('is-wrong', 'is-blinking');
       if (isOn && !puzzle.validPixels.has(idx)) p.classList.add('is-wrong');
-      if (slideNum === 3 && !isOn && expectedOn) p.classList.add('is-blinking');
     });
     play('error');
   }
+}
+
+function resetSlide4ForNextSub(slide) {
+  // Nettoie la matrice, met a jour rule + warn + count, prepare le sub suivant.
+  const puzzle = getPuzzle(4);
+  // Toggle classe is-free-mode (sub Pikachu) : pilote l'affichage palette / cache hint
+  slide.classList.toggle('is-free-mode', !!puzzle?.isFreeMode);
+  slide.querySelectorAll('.step-E4__pix').forEach(p => {
+    p.classList.remove('is-on', 'is-on-jaune', 'is-on-jaune2', 'is-on-rouge',
+                       'is-on-noir', 'is-on-cyan', 'is-hint', 'is-wrong', 'is-blinking');
+  });
+  // Rule text
+  const ruleSpan = slide.querySelector('.step-E4__rule > span:not(.step-E4__rule-tag)');
+  if (ruleSpan) ruleSpan.textContent = puzzle.rule;
+  // Warn
+  const oldWarn = slide.querySelector('.step-E4__rule-warn');
+  if (oldWarn) oldWarn.remove();
+  if (puzzle.warn) {
+    const w = document.createElement('p');
+    w.className = 'step-E4__rule-warn';
+    w.textContent = puzzle.warn;
+    const wrap = slide.querySelector('.step-E4__puzzle');
+    wrap?.insertBefore(w, wrap.querySelector('.step-E4__matrix-host'));
+  }
+  // Compteur
+  const cnt = slide.querySelector('[data-role="count"]');
+  if (cnt) cnt.textContent = `0 / ${puzzle.expectedCount}`;
+  // Sub progress indicator (1/4, 2/4...)
+  const subTag = slide.querySelector('[data-role="sub-progress"]');
+  if (subTag) subTag.textContent = `${state.puzzle4SubIdx + 1} / ${PUZZLE_4_SUBS.length}`;
+  // Re-enable le bouton indice (les hints viennent d'etre reset)
+  const hintBtn = slide.querySelector('[data-role="hint"]');
+  if (hintBtn) hintBtn.disabled = false;
 }
 
 function revealHint(slide, slideNum, idx) {
@@ -1056,35 +1257,9 @@ function revealHint(slide, slideNum, idx) {
   state[hintsKey(slideNum)] = arr;
   saveStepState('E4', { ...state });
 
-  const lock = slide.querySelector(`.step-E4__hint-locker[data-hint-idx="${idx}"]`);
-  if (lock) {
-    lock.classList.remove('is-pulsing');
-    lock.classList.add('is-unlocking');
-    const tOpen = setTimeout(() => {
-      lock.classList.remove('cadenas--ferme');
-      lock.classList.add('cadenas--ouvert');
-    }, 600);
-    timers.push(tOpen);
-  }
-  const revealed = slide.querySelector('[data-role="hints-revealed"]');
-  if (revealed) {
-    const bubble = document.createElement('div');
-    bubble.className = 'step-E4__hint-bubble';
-    bubble.textContent = `💡 ${getPuzzle(slideNum).hints[idx]}`;
-    revealed.appendChild(bubble);
-  }
-  // Visualise sur la matrice : highlight ligne/colonne concernees
-  const puzzle = getPuzzle(slideNum);
-  const cells = slide.querySelectorAll('.step-E4__pix');
-  if (slideNum === 3) {
-    if (idx === 0) cells.forEach(c => { if (Math.floor(+c.dataset.idx / 8) === 3) c.classList.add('is-hint'); });
-    if (idx === 1) cells.forEach(c => { const col = +c.dataset.idx % 8; if (col === 3 || col === 4) c.classList.add('is-hint'); });
-    if (idx === 2) cells.forEach(c => { if (puzzle.validPixels.has(+c.dataset.idx)) c.classList.add('is-hint'); });
-  } else {
-    if (idx === 0) cells.forEach(c => { if (Math.floor(+c.dataset.idx / 8) === 0) c.classList.add('is-hint'); });
-    if (idx === 1) cells.forEach(c => { if (Math.floor(+c.dataset.idx / 8) === 7) c.classList.add('is-hint'); });
-    if (idx === 2) cells.forEach(c => { if (puzzle.validPixels.has(+c.dataset.idx)) c.classList.add('is-hint'); });
-  }
+  // Chaque puzzle/sub expose son propre hintCells(idx). Le tableau de
+  // pixels indices ne depend plus de hardcodes globaux mais du puzzle.
+  applyHintToMatrix(slide, slideNum, idx);
   play('unlock');
 }
 
@@ -1181,31 +1356,32 @@ function setSlide(root, slideNum, navAPI) {
     }
   }
 
-  // Slides 3/4 : restore pixels + hints + code en cours
+  // Slides 3/4 : restore pixels + hints sur matrice + code en cours
   if (slideNum === 3 || slideNum === 4) {
+    // Slide 4 : sync DOM avec le sub courant (rule, warn, count, free-mode).
+    // On appelle toujours, meme sur le sub 0, pour cleanup correct.
+    if (slideNum === 4) {
+      resetSlide4ForNextSub(slide);
+    }
     refreshPuzzlePixels(slide, slideNum);
     refreshPuzzleCount(slide, slideNum);
-    // Restore hints
+    // Restore .is-hint sur les pixels de la matrice (pas de bulles)
     const hintsArr = state[hintsKey(slideNum)];
     hintsArr.forEach((revealed, i) => {
-      if (!revealed) return;
-      const lock = slide.querySelector(`.step-E4__hint-locker[data-hint-idx="${i}"]`);
-      if (lock) {
-        lock.classList.remove('is-pulsing', 'cadenas--ferme', 'is-unlocking');
-        lock.classList.add('cadenas--ouvert');
-      }
-      const revealedZone = slide.querySelector('[data-role="hints-revealed"]');
-      if (revealedZone) {
-        const b = document.createElement('div');
-        b.className = 'step-E4__hint-bubble';
-        b.style.animation = 'none';
-        b.textContent = `💡 ${getPuzzle(slideNum).hints[i]}`;
-        revealedZone.appendChild(b);
-      }
+      if (revealed) applyHintToMatrix(slide, slideNum, i);
     });
     // Restore code en cours
     fillCodeCells(slide);
   }
+}
+
+function applyHintToMatrix(slide, slideNum, idx) {
+  const puzzle = getPuzzle(slideNum);
+  if (!puzzle?.hintCells) return;
+  const targets = puzzle.hintCells(idx);
+  slide.querySelectorAll('.step-E4__pix').forEach(c => {
+    if (targets.has(+c.dataset.idx)) c.classList.add('is-hint');
+  });
 }
 
 function fillCodeCells(slide) {
@@ -1271,16 +1447,41 @@ function attachListeners(root, navAPI) {
       cell.addEventListener('click', onClick);
       handlers.push([cell, 'click', onClick]);
     });
-    slide.querySelectorAll('.step-E4__hint-locker').forEach(lock => {
-      const onClick = () => revealHint(slide, n, +lock.dataset.hintIdx);
-      lock.addEventListener('click', onClick);
-      handlers.push([lock, 'click', onClick]);
-    });
     const clear = slide.querySelector('.step-E4__btn-clear');
     if (clear) {
       const onClick = () => clearPixels(slide, n);
       clear.addEventListener('click', onClick);
       handlers.push([clear, 'click', onClick]);
+    }
+    const hintBtn = slide.querySelector('[data-role="hint"]');
+    if (hintBtn) {
+      const onClick = () => {
+        const arr = state[hintsKey(n)];
+        const nextIdx = arr.findIndex(v => !v);
+        if (nextIdx < 0 || nextIdx > 2) return;
+        revealHint(slide, n, nextIdx);
+        // Disable si tous reveles
+        const next = state[hintsKey(n)].findIndex(v => !v);
+        if (next < 0) hintBtn.disabled = true;
+      };
+      hintBtn.addEventListener('click', onClick);
+      handlers.push([hintBtn, 'click', onClick]);
+      // Init disabled state
+      const next = state[hintsKey(n)].findIndex(v => !v);
+      hintBtn.disabled = next < 0;
+    }
+    // Listeners palette (slide 4 uniquement)
+    if (n === 4) {
+      slide.querySelectorAll('.step-E4__color-btn').forEach(btn => {
+        const onClick = () => {
+          currentColor = btn.dataset.color;
+          slide.querySelectorAll('.step-E4__color-btn').forEach(b => {
+            b.classList.toggle('is-active', b === btn);
+          });
+        };
+        btn.addEventListener('click', onClick);
+        handlers.push([btn, 'click', onClick]);
+      });
     }
     const validate = slide.querySelector('[data-role="validate"]');
     if (validate) {
@@ -1370,6 +1571,10 @@ export default {
       puzzle4Solved: savedState?.puzzle4Solved ?? false,
       puzzle3Pixels: Array.isArray(savedState?.puzzle3Pixels) ? [...savedState.puzzle3Pixels] : [],
       puzzle4Pixels: Array.isArray(savedState?.puzzle4Pixels) ? [...savedState.puzzle4Pixels] : [],
+      puzzle4SubIdx: typeof savedState?.puzzle4SubIdx === 'number'
+        ? Math.min(savedState.puzzle4SubIdx, PUZZLE_4_SUBS.length - 1) : 0,
+      puzzle4FreeColors: savedState?.puzzle4FreeColors && typeof savedState.puzzle4FreeColors === 'object'
+        ? { ...savedState.puzzle4FreeColors } : {},
       hints3: Array.isArray(savedState?.hints3) ? savedState.hints3.slice(0, 3) : [false, false, false],
       hints4: Array.isArray(savedState?.hints4) ? savedState.hints4.slice(0, 3) : [false, false, false],
       digit5: savedState?.digit5 ?? null,
@@ -1377,6 +1582,7 @@ export default {
     };
     if (state.hints3.length < 3) state.hints3 = [...state.hints3, ...Array(3 - state.hints3.length).fill(false)];
     if (state.hints4.length < 3) state.hints4 = [...state.hints4, ...Array(3 - state.hints4.length).fill(false)];
+    quizLocked = false; // reset au cas ou exit pendant le delai
 
     scene = new Container();
     container.addChild(scene);
@@ -1424,6 +1630,8 @@ export default {
       puzzle4Solved: state.puzzle4Solved,
       puzzle3Pixels: [...state.puzzle3Pixels],
       puzzle4Pixels: [...state.puzzle4Pixels],
+      puzzle4SubIdx: state.puzzle4SubIdx,
+      puzzle4FreeColors: { ...state.puzzle4FreeColors },
       hints3: [...state.hints3],
       hints4: [...state.hints4],
       digit5: state.digit5,

@@ -26,7 +26,7 @@ const CSS = `
   grid-template-rows: 1fr auto;
   align-items: center;
   justify-items: center;
-  padding: var(--s-6);
+  padding: var(--s-6) var(--s-5) var(--s-8);
   text-align: center;
   cursor: var(--cursor-default);
 }
@@ -37,7 +37,6 @@ const CSS = `
   align-items: center;
   gap: var(--s-3);
   align-self: center;
-  margin-top: var(--s-7);
 }
 
 .step-D4__titre {
@@ -56,21 +55,21 @@ const CSS = `
   max-width: 80%;
 }
 
-.step-D4__bottom {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: end;
-  width: 100%;
-  gap: var(--s-4);
-  padding-bottom: var(--s-3);
-}
-
-/* Wrapper qui anime l'apparition. La .tuko-mascotte conserve son bobbing interne. */
-.step-D4__tuko-wrap {
-  justify-self: start;
+.step-D4__tuko-build {
+  position: absolute;
+  bottom: var(--s-3);
+  left: var(--s-3);
+  width: clamp(280px, 22vw, 360px);
+  height: auto;
+  pointer-events: none;
   opacity: 0;
-  transform: translateX(-120%);
-  animation: step-D4-slide-in-tuko var(--d-slow) var(--ease-out) 1.2s forwards;
+  transform: translateX(-120px);
+  will-change: opacity, transform;
+  z-index: 1;
+}
+.step-D4__tuko-build.is-in {
+  animation: step-D4-slide-in-tuko var(--d-slow) var(--ease-out) 1.2s forwards,
+             step-D4-tuko-bobbing 2.6s ease-in-out 1.9s infinite;
 }
 
 .step-D4__cta {
@@ -78,10 +77,8 @@ const CSS = `
   opacity: 0;
   transform: scale(0);
   animation: step-D4-pop var(--d-normal) var(--ease-bounce) 1.8s forwards;
-}
-
-.step-D4__spacer {
-  width: 160px;
+  position: relative;
+  z-index: 2;
 }
 
 @keyframes step-D4-smash {
@@ -96,6 +93,12 @@ const CSS = `
 
 @keyframes step-D4-slide-in-tuko {
   to { opacity: 1; transform: translateX(0); }
+}
+
+/* Bobbing leger, signature mascotte. */
+@keyframes step-D4-tuko-bobbing {
+  0%, 100% { transform: translate(0, 0)     rotate(-1deg); }
+  50%      { transform: translate(0, -6px)  rotate(1deg); }
 }
 
 @keyframes step-D4-pop {
@@ -151,31 +154,20 @@ function buildDom(navAPI) {
   heading.appendChild(sous);
   wrap.appendChild(heading);
 
-  // Bottom row : Tuko (gauche) | CTA (centre) | spacer (droite, equilibre)
-  const bottom = document.createElement('div');
-  bottom.className = 'step-D4__bottom';
-
-  const tukoWrap = document.createElement('div');
-  tukoWrap.className = 'step-D4__tuko-wrap';
-
-  const tuko = document.createElement('div');
-  tuko.className = 'tuko-mascotte';
-  tuko.setAttribute('data-pose', 'presentateur');
-  tuko.setAttribute('data-position', 'inline');
-  tukoWrap.appendChild(tuko);
-  bottom.appendChild(tukoWrap);
-
+  // CTA centre, en flow grid row 2 (aligne avec A1 via padding-bottom var(--s-8)).
   const cta = document.createElement('button');
   cta.type = 'button';
   cta.className = 'cta-primary step-D4__cta';
   cta.textContent = '▶ ON Y VA';
-  bottom.appendChild(cta);
+  wrap.appendChild(cta);
 
-  const spacer = document.createElement('div');
-  spacer.className = 'step-D4__spacer';
-  bottom.appendChild(spacer);
-
-  wrap.appendChild(bottom);
+  // Tuko_build en grand, bas-gauche, position absolue (n'occupe pas de cellule grid).
+  const tuko = document.createElement('img');
+  tuko.className = 'step-D4__tuko-build';
+  tuko.src = 'assets/sprites/tuko_build.png';
+  tuko.alt = '';
+  wrap.appendChild(tuko);
+  requestAnimationFrame(() => tuko.classList.add('is-in'));
 
   // Listener CTA : retraction du titre puis next.
   const onCtaClick = () => triggerExitAndNext(wrap, navAPI);
@@ -253,9 +245,9 @@ export default {
     if (!wrap) return;
     const titre = wrap.querySelector('.step-D4__titre');
     const sous  = wrap.querySelector('.step-D4__sous');
-    const tukoWrap = wrap.querySelector('.step-D4__tuko-wrap');
+    const tuko  = wrap.querySelector('.step-D4__tuko-build');
     const cta   = wrap.querySelector('.step-D4__cta');
-    [titre, sous, tukoWrap, cta].forEach(el => {
+    [titre, sous, tuko, cta].forEach(el => {
       if (!el) return;
       el.style.animation = 'none';
       void el.offsetWidth;

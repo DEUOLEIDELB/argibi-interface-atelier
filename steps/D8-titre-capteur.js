@@ -49,22 +49,6 @@ const STYLE_TEXT = `
   80%  { transform: scale(0.95) translateX(2px); }
   100% { opacity: 1; transform: scale(1); }
 }
-.step-D8__titre.is-flash {
-  animation: d8-flash 200ms var(--ease-out) 1;
-}
-@keyframes d8-flash {
-  0%   { filter: brightness(1)   drop-shadow(0 0 0   var(--accent-2)); }
-  50%  { filter: brightness(1.4) drop-shadow(0 0 24px var(--accent-2)); }
-  100% { filter: brightness(1)   drop-shadow(0 0 0   var(--accent-2)); }
-}
-.step-D8__titre.is-idle-microglitch {
-  animation: d8-microglitch 100ms steps(2) 1;
-}
-@keyframes d8-microglitch {
-  0%   { text-shadow: none; transform: translate(0,0); }
-  50%  { text-shadow: -2px 0 var(--accent-2), 2px 0 var(--accent-4); transform: translate(-1px,0); }
-  100% { text-shadow: none; transform: translate(0,0); }
-}
 .step-D8__sous-titre {
   font-family: var(--display);
   font-size: var(--t-h2);
@@ -82,23 +66,49 @@ const STYLE_TEXT = `
 @keyframes d8-slide-up {
   to { opacity: 1; transform: translateY(0); }
 }
-.step-D8__tuko {
+.step-D8__tuko-myst {
+  position: absolute;
+  bottom: var(--s-3);
+  right: var(--s-3);
+  width: clamp(280px, 22vw, 360px);
+  height: auto;
+  pointer-events: none;
   opacity: 0;
-  transform: translateX(-100px);
+  transform: translateX(120px);
+  transform-origin: 50% 70%;
   will-change: opacity, transform;
+  z-index: 1;
 }
-.step-D8__tuko.is-in {
-  animation: d8-tuko-enter var(--d-slow) var(--ease-out) 1400ms forwards;
+.step-D8__tuko-myst.is-in {
+  animation: d8-tuko-enter var(--d-slow) var(--ease-out) 1000ms forwards,
+             d8-myst-shake 2.8s ease-in-out 1700ms infinite;
 }
 @keyframes d8-tuko-enter {
   to { opacity: 1; transform: translateX(0); }
 }
+/* Shake aleatoire (sequence irreguliere, sans rotation excessive). */
+@keyframes d8-myst-shake {
+  0%,100% { transform: translate(0, 0)     rotate(0); }
+  5%   { transform: translate(-3px, 2px)   rotate(-1.2deg); }
+  11%  { transform: translate(2px, -2px)   rotate(1deg); }
+  17%  { transform: translate(-4px, 1px)   rotate(-1.6deg); }
+  24%  { transform: translate(3px, 3px)    rotate(1.4deg); }
+  31%  { transform: translate(-2px, -3px)  rotate(-0.8deg); }
+  39%  { transform: translate(4px, 2px)    rotate(1.6deg); }
+  47%  { transform: translate(-3px, 3px)   rotate(-1.4deg); }
+  56%  { transform: translate(2px, -4px)   rotate(1.2deg); }
+  65%  { transform: translate(-4px, 1px)   rotate(-1.8deg); }
+  74%  { transform: translate(3px, 2px)    rotate(0.8deg); }
+  83%  { transform: translate(-2px, 3px)   rotate(-1deg); }
+  92%  { transform: translate(2px, -1px)   rotate(1.4deg); }
+}
 .step-D8__cta-anchor {
   position: absolute;
-  bottom: var(--s-4);
+  bottom: var(--s-8);
   left: 50%;
   transform: translateX(-50%);
   pointer-events: auto;
+  z-index: 2;
 }
 .step-D8__cta {
   opacity: 0;
@@ -107,8 +117,7 @@ const STYLE_TEXT = `
   will-change: opacity, transform;
 }
 .step-D8__cta.is-in {
-  animation: d8-cta-pop 350ms var(--ease-bounce) 2000ms forwards,
-             cta-idle-pulse 2s var(--ease-out) 2400ms infinite;
+  animation: d8-cta-pop 350ms var(--ease-bounce) 1400ms forwards;
 }
 @keyframes d8-cta-pop {
   0%   { opacity: 0; transform: scale(0); }
@@ -167,11 +176,11 @@ function build(navAPI) {
 
   wrap.appendChild(centre);
 
-  // Tuko placeholder : composant partage `.tuko-mascotte`.
-  const tuko = document.createElement('div');
-  tuko.className = 'tuko-mascotte step-D8__tuko';
-  tuko.dataset.pose = 'presentateur';
-  tuko.dataset.position = 'bas-gauche';
+  // Tuko_myst en bas-droite (sprite reel + shake aleatoire).
+  const tuko = document.createElement('img');
+  tuko.className = 'step-D8__tuko-myst';
+  tuko.src = 'assets/sprites/tuko_myst.png';
+  tuko.alt = '';
   wrap.appendChild(tuko);
 
   const ctaAnchor = document.createElement('div');
@@ -187,7 +196,8 @@ function build(navAPI) {
   stage.appendChild(wrap);
   domNodes.push(wrap);
 
-  // Trigger entrance animations on next frame so initial styles apply.
+  // Animations d'entree (UNE seule fois : titre smash, sous slide-up,
+  // tuko slide-in + shake en boucle, CTA pop). Aucune anim repetee sur titre.
   requestAnimationFrame(() => {
     titre.classList.add('is-in');
     sous.classList.add('is-in');
@@ -195,29 +205,16 @@ function build(navAPI) {
     cta.classList.add('is-in');
   });
 
-  // Flash cyan apres le smash (signature capteur capacitif).
-  const tFlashOn = setTimeout(() => titre.classList.add('is-flash'), 400);
-  const tFlashOff = setTimeout(() => titre.classList.remove('is-flash'), 600);
-  timers.push(tFlashOn, tFlashOff);
-
   // CTA enabled apres entrance.
-  const tEnable = setTimeout(() => { cta.disabled = false; }, 2400);
+  const tEnable = setTimeout(() => { cta.disabled = false; }, 1800);
   timers.push(tEnable);
 
-  // Mark complete after entrance complete.
+  // Mark complete (mais pas d'auto-advance : passage manuel uniquement).
   const tComplete = setTimeout(() => {
     viewed = true;
     navAPI.markComplete();
-  }, 3000);
+  }, 2200);
   timers.push(tComplete);
-
-  // Idle micro-glitch toutes les 5s (clin d'oeil signature glitch A4).
-  const idleGlitch = setInterval(() => {
-    titre.classList.add('is-idle-microglitch');
-    const tt = setTimeout(() => titre.classList.remove('is-idle-microglitch'), 120);
-    timers.push(tt);
-  }, 5000);
-  intervals.push(idleGlitch);
 
   const onCtaClick = () => {
     if (cta.disabled) return;
@@ -230,11 +227,7 @@ function build(navAPI) {
   cta.addEventListener('click', onCtaClick);
   handlers.push([cta, 'click', onCtaClick]);
 
-  // Auto-advance apres 8s (template D0).
-  const autoAdv = setTimeout(() => {
-    if (!cta.disabled) onCtaClick();
-  }, 8000);
-  timers.push(autoAdv);
+  // Pas d'auto-advance : navigation manuelle uniquement (sur demande Taki).
 }
 
 export default {

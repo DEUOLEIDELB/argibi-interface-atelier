@@ -22,7 +22,7 @@ import { Container } from 'pixi.js';
 import { app } from '../core/app.js';
 import { play } from '../core/audio.js';
 import { saveStepState } from '../core/state.js';
-import { spawnShockwave, spawnEtincelles } from '../core/effects.js';
+import { spawnShockwave } from '../core/effects.js';
 import { enableKurnelOverlay } from './_kurnel-overlay.js';
 
 let scene = null;
@@ -45,10 +45,10 @@ const CSS = `
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: var(--bg);
+  background: #000;
   cursor: var(--cursor-default);
   font-family: var(--display);
-  color: var(--ink);
+  color: var(--paper);
   user-select: none;
 }
 
@@ -149,8 +149,11 @@ const CSS = `
 }
 
 .step-E0__hero {
-  width: min(880px, 80%);
-  aspect-ratio: 16 / 9;
+  width: min(680px, 60vw);
+  height: auto;
+  max-height: 55vh;
+  object-fit: contain;
+  display: block;
   opacity: 0;
   transform: scale(0.6);
   animation: e0-hero-in var(--d-hero) var(--ease-bounce) 0.4s forwards,
@@ -196,8 +199,11 @@ const CSS = `
 
 /* ---- Panneau 2 specifiques ---- */
 .step-E0__hero-2 {
-  width: min(880px, 80%);
-  aspect-ratio: 16 / 9;
+  width: min(680px, 60vw);
+  height: auto;
+  max-height: 55vh;
+  object-fit: contain;
+  display: block;
   opacity: 0;
   transform: scale(0.7);
   animation: e0-hero-2-in var(--d-hero) var(--ease-bounce) 0.1s forwards;
@@ -215,9 +221,12 @@ const CSS = `
   align-items: center;
   gap: var(--s-2);
   margin: 0;
-  max-width: 1100px;
+  max-width: 1400px;
 }
 .step-E0__caption-2 .step-E0__caption-line {
+  font-size: clamp(48px, 4.8vw, 84px);
+  letter-spacing: 0.02em;
+  padding: var(--s-3) var(--s-5);
   opacity: 0;
   transform: scale(0.7);
   animation: e0-line-smash var(--d-normal) var(--ease-bounce) forwards;
@@ -230,38 +239,6 @@ const CSS = `
   0%   { transform: scale(0.7); opacity: 0; }
   60%  { transform: scale(1.1); opacity: 1; }
   100% { transform: scale(1);   opacity: 1; }
-}
-
-/* Tuko pointe la classe (4e mur) — composant partage .tuko-mascotte override en position absolue */
-.step-E0__tuko-pointe {
-  position: absolute;
-  bottom: 22%;
-  left: 50%;
-  transform: translateX(-50%) scale(0);
-  z-index: 35;
-  opacity: 0;
-  animation: e0-tuko-pointe-in var(--d-normal) var(--ease-bounce) 2.4s forwards;
-}
-@keyframes e0-tuko-pointe-in {
-  0%   { transform: translateX(-50%) scale(0);    opacity: 0; }
-  70%  { transform: translateX(-50%) scale(1.15); opacity: 1; }
-  100% { transform: translateX(-50%) scale(1);    opacity: 1; }
-}
-
-/* Override : .tuko-mascotte applique son propre bobbing en translateY, on neutralise
-   pour preserver le translateX(-50%) du wrapper E0 (sinon Tuko se decale a gauche). */
-.step-E0__tuko-pointe.tuko-mascotte { animation: e0-tuko-pointe-in var(--d-normal) var(--ease-bounce) 2.4s forwards; }
-
-.step-E0__cta {
-  margin-top: var(--s-3);
-  opacity: 0;
-  transform: scale(0);
-  animation: e0-cta-in var(--d-normal) var(--ease-bounce) 2.8s forwards;
-}
-@keyframes e0-cta-in {
-  0%   { transform: scale(0);    opacity: 0; }
-  70%  { transform: scale(1.15); opacity: 1; }
-  100% { transform: scale(1);    opacity: 1; }
 }
 
 /* ---- Hint clavier discret ---- */
@@ -391,9 +368,10 @@ function buildPanel1() {
   bandeau.appendChild(cibles);
   panel.appendChild(bandeau);
 
-  const hero = document.createElement('div');
-  hero.className = 'placeholder-image step-E0__hero';
-  hero.appendChild(textNode('[ KURNEL RICANE GLITCH NOLLS S\'INFILTRENT ]'));
+  const hero = document.createElement('img');
+  hero.className = 'step-E0__hero';
+  hero.src = 'assets/sprites/E0/KURNEL.svg';
+  hero.alt = '';
   panel.appendChild(hero);
 
   const caption = document.createElement('div');
@@ -420,42 +398,22 @@ function buildPanel2() {
   spacer.style.minHeight = '40px';
   panel.appendChild(spacer);
 
-  const hero = document.createElement('div');
-  hero.className = 'placeholder-image step-E0__hero-2';
-  hero.appendChild(textNode('[ 4 BRIKZ + TUKO SERRES DETERMINES ]'));
+  const hero = document.createElement('img');
+  hero.className = 'step-E0__hero-2';
+  hero.src = 'assets/sprites/E0/tuko_disc.png';
+  hero.alt = '';
   panel.appendChild(hero);
 
   const captionWrap = document.createElement('div');
   captionWrap.className = 'step-E0__caption-2';
-  const phrases = [
-    '« ON SAIT LIRE LES SIGNAUX. ON PEUT REPARER. »',
-    '« 2 ZONES A SAUVER : COULEUR ET LUMIERE. »',
-    '« A VOUS DE JOUER ! »',
-  ];
-  phrases.forEach(text => {
-    const ln = document.createElement('span');
-    ln.className = 'caption-bd step-E0__caption-line';
-    ln.textContent = text;
-    captionWrap.appendChild(ln);
-  });
-
-  // CTA en dessous des 3 lignes
-  const cta = document.createElement('button');
-  cta.type = 'button';
-  cta.className = 'cta-primary step-E0__cta';
-  cta.textContent = '▶ ON Y VA';
-  captionWrap.appendChild(cta);
+  const ln = document.createElement('span');
+  ln.className = 'caption-bd step-E0__caption-line';
+  ln.textContent = "A L'AIDEEEE !";
+  captionWrap.appendChild(ln);
 
   panel.appendChild(captionWrap);
 
-  // Mini-Tuko qui pointe la classe (4e mur) — composant partage .tuko-mascotte
-  const tukoPointe = document.createElement('div');
-  tukoPointe.className = 'tuko-mascotte step-E0__tuko-pointe';
-  tukoPointe.dataset.pose = 'combat';
-  tukoPointe.dataset.position = 'inline';
-  panel.appendChild(tukoPointe);
-
-  return { panel, cta };
+  return { panel };
 }
 
 function buildProgress(currentPanel) {
@@ -516,24 +474,10 @@ function activatePanel(root, panelNum, navAPI) {
     // Reward onde de victoire au passage BRIKZ riposte (delay calque sur l'anim hero-2)
     if (p2 && root.isConnected) {
       const tShock = setTimeout(() => spawnShockwave(p2, { rayonMax: 1400, duree: 900 }), 200);
-      const tSparks = setTimeout(() => {
-        const cta = p2.querySelector('.step-E0__cta');
-        if (cta) spawnEtincelles(cta, { nombre: 12 });
-      }, 2900);
-      timers.push(tShock, tSparks);
+      timers.push(tShock);
     }
-    // Bind CTA panel 2 (idempotent : pas plus d'un listener)
-    const cta = p2?.querySelector('.step-E0__cta');
-    if (cta && !cta.dataset.bound) {
-      const onCta = () => {
-        play('whoosh');
-        enableKurnelOverlay();
-        navAPI.next();
-      };
-      cta.addEventListener('click', onCta);
-      handlers.push([cta, 'click', onCta]);
-      cta.dataset.bound = '1';
-    }
+    // Active l'overlay glitch persistant des l'arrivee sur panel 2.
+    enableKurnelOverlay();
   }
 
   // Reset shake/glitch listeners pour panneau 1 : flash au pic anim

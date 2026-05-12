@@ -83,16 +83,44 @@ const STYLE_TEXT = `
 @keyframes d0-slide-up {
   to { opacity: 1; transform: translateY(0); }
 }
-.step-D0 .tuko-mascotte {
+.step-D0__tuko-panic {
+  position: absolute;
+  bottom: var(--s-3);
+  left: var(--s-3);
+  width: clamp(320px, 26vw, 420px);
+  height: auto;
+  pointer-events: none;
   opacity: 0;
-  transform: translateX(-100px);
+  transform: translateX(-120px) rotate(0);
+  transform-origin: 50% 70%;
   will-change: opacity, transform;
+  z-index: 1;
 }
-.step-D0 .tuko-mascotte.is-in {
-  animation: d0-tuko-enter var(--d-slow) var(--ease-out) 1400ms forwards;
+.step-D0__tuko-panic.is-in {
+  animation: d0-tuko-enter var(--d-slow) var(--ease-out) 1200ms forwards,
+             d0-panic-shake 2.6s ease-in-out 1900ms infinite;
 }
 @keyframes d0-tuko-enter {
-  to { opacity: 1; transform: translateX(0); }
+  to { opacity: 1; transform: translateX(0) rotate(0); }
+}
+/* Shake "panique" : sequence irreguliere de micro-deplacements + rotations
+   pour donner l'impression d'un tremblement aleatoire. */
+@keyframes d0-panic-shake {
+  0%,100% { transform: translate(0, 0)     rotate(0); }
+  4%    { transform: translate(-4px, 2px)  rotate(-1.6deg); }
+  9%    { transform: translate(3px, -3px)  rotate(1.4deg); }
+  14%   { transform: translate(-2px, 1px)  rotate(-0.6deg); }
+  19%   { transform: translate(5px, 3px)   rotate(2deg); }
+  25%   { transform: translate(-5px, -2px) rotate(-1.8deg); }
+  32%   { transform: translate(1px, -4px)  rotate(0.8deg); }
+  39%   { transform: translate(-3px, 4px)  rotate(-1.2deg); }
+  46%   { transform: translate(4px, 1px)   rotate(1.6deg); }
+  53%   { transform: translate(-1px, 4px)  rotate(-0.4deg); }
+  61%   { transform: translate(5px, -3px)  rotate(2deg); }
+  69%   { transform: translate(-4px, 2px)  rotate(-1.8deg); }
+  77%   { transform: translate(2px, 3px)   rotate(0.6deg); }
+  85%   { transform: translate(-3px, -1px) rotate(-1.2deg); }
+  93%   { transform: translate(3px, 2px)   rotate(1deg); }
 }
 .step-D0__cta-anchor {
   position: absolute;
@@ -168,11 +196,11 @@ function build(navAPI) {
 
   wrap.appendChild(centre);
 
-  // Tuko mascotte (composant partage) : pose "hote" pour l'accueil de chapitre.
-  const tuko = document.createElement('div');
-  tuko.className = 'tuko-mascotte';
-  tuko.dataset.pose = 'hote';
-  tuko.dataset.position = 'bas-gauche';
+  // Tuko panic en grand, bas-gauche. Pose qui dit "ca commence vraiment !".
+  const tuko = document.createElement('img');
+  tuko.className = 'step-D0__tuko-panic';
+  tuko.src = 'assets/sprites/tuko_panic.png';
+  tuko.alt = '';
   wrap.appendChild(tuko);
 
   const ctaAnchor = document.createElement('div');
@@ -233,11 +261,7 @@ function build(navAPI) {
   cta.addEventListener('click', onCtaClick);
   handlers.push([cta, 'click', onCtaClick]);
 
-  // Auto-advance after 8s (cf. fiche : garantit le rythme).
-  const autoAdv = setTimeout(() => {
-    if (!cta.disabled) onCtaClick();
-  }, 8000);
-  timers.push(autoAdv);
+  // Pas d'auto-advance : l'animateur garde la main pour passer a D1 (sur demande Taki).
 }
 
 export default {

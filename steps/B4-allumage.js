@@ -16,7 +16,7 @@
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';
 import { saveStepState } from '../core/state.js';
-import { spawnEtincelles, spawnShockwave } from '../core/effects.js';
+import { spawnShockwave } from '../core/effects.js';
 
 let scene = null;
 let domNodes = [];
@@ -24,7 +24,6 @@ let handlers = [];
 let timers = [];
 let tickerFns = [];
 let navAPIRef = null;
-let stopSparkles = null;
 
 let currentSlide = 1;
 let goPressed = false;
@@ -78,12 +77,10 @@ let bandeauEl = null;
 let bandeauTextEl = null;
 let cta1El = null;
 let tuko1El = null;
-let tuko2El = null;
 let matrixEl = null;
 let matrixWrapEl = null;
 let matrixCells = [];
 let titreAppuieEl = null;
-let sousTitre2El = null;
 let cta2El = null;
 
 export default {
@@ -156,11 +153,6 @@ export default {
     tickerFns.forEach(fn => app.ticker.remove(fn));
     tickerFns = [];
 
-    if (stopSparkles) {
-      stopSparkles();
-      stopSparkles = null;
-    }
-
     domNodes.forEach(n => n.remove());
     domNodes = [];
 
@@ -179,12 +171,10 @@ export default {
     bandeauTextEl = null;
     cta1El = null;
     tuko1El = null;
-    tuko2El = null;
     matrixEl = null;
     matrixWrapEl = null;
     matrixCells = [];
     titreAppuieEl = null;
-    sousTitre2El = null;
     cta2El = null;
   },
 
@@ -210,27 +200,48 @@ function buildSlide1(wrap) {
   titre.textContent = 'ON BRANCHE LA BATTERIE';
   slide.appendChild(titre);
 
-  const image = document.createElement('div');
-  image.className = 'placeholder-image step-B4__image';
-  image.textContent = 'illustration batterie + cable + capsule, branchement clair';
-  slide.appendChild(image);
+  // Wrapper centre : faisceau rotatif jaune (derriere) + card batterie (devant)
+  const imageWrap = document.createElement('div');
+  imageWrap.className = 'step-B4__image-wrap';
 
+  const beam = document.createElement('div');
+  beam.className = 'step-B4__beam';
+  imageWrap.appendChild(beam);
+
+  const card = document.createElement('div');
+  card.className = 'step-B4__image-card';
+  const image = document.createElement('img');
+  image.className = 'step-B4__image';
+  image.src = 'assets/sprites/B4/batterie.jpg';
+  image.alt = 'Batterie externe';
+  image.loading = 'lazy';
+  card.appendChild(image);
+  imageWrap.appendChild(card);
+
+  slide.appendChild(imageWrap);
+
+  // Bandeau warning avec icone d'alerte explicite + texte
   const bandeau = document.createElement('div');
   bandeau.className = 'bandeau-pulsant bandeau-pulsant--alerte step-B4__bandeau';
+  const bandeauIconLeft = document.createElement('span');
+  bandeauIconLeft.className = 'step-B4__bandeau-icon';
+  bandeauIconLeft.setAttribute('aria-hidden', 'true');
+  bandeauIconLeft.textContent = '⚠';
+  bandeau.appendChild(bandeauIconLeft);
   const bandeauText = document.createElement('span');
   bandeauText.className = 'step-B4__bandeau-text';
-  bandeauText.textContent = "n'allume pas : attends le GO";
+  bandeauText.textContent = "N'ALLUME PAS : ATTENDS LE GO";
   bandeau.appendChild(bandeauText);
+  const bandeauIconRight = document.createElement('span');
+  bandeauIconRight.className = 'step-B4__bandeau-icon';
+  bandeauIconRight.setAttribute('aria-hidden', 'true');
+  bandeauIconRight.textContent = '⚠';
+  bandeau.appendChild(bandeauIconRight);
   slide.appendChild(bandeau);
   bandeauEl = bandeau;
   bandeauTextEl = bandeauText;
-
-  const tuko = document.createElement('div');
-  tuko.className = 'tuko-mascotte';
-  tuko.dataset.pose = 'stop';
-  tuko.dataset.position = 'bas-gauche';
-  slide.appendChild(tuko);
-  tuko1El = tuko;
+  // Tuko placeholder bas-gauche retire sur demande Taki (slide 1)
+  tuko1El = null;
 
   const cta = document.createElement('button');
   cta.type = 'button';
@@ -257,10 +268,7 @@ function triggerGo() {
   bandeauTextEl.textContent = 'GO !';
   bandeauEl.classList.add('step-B4__bandeau--flash');
 
-  // Tuko stop -> triomphe via data-pose (mascotte partagee).
-  if (tuko1El) {
-    tuko1El.dataset.pose = 'triomphe';
-  }
+  // (Tuko1 retire sur slide 1 : pas de changement de pose ici.)
 
   // Flash plein ecran bref puis bascule slide 2.
   const flash = document.createElement('div');
@@ -288,11 +296,11 @@ function buildSlide2(wrap) {
 
   const titre = document.createElement('h2');
   titre.className = 'titre-hero step-B4__titre-appuie';
-  titre.textContent = 'APPUIE !';
+  titre.textContent = 'Allume ton Argibi !';
   slide.appendChild(titre);
   titreAppuieEl = titre;
 
-  // Wrapper positionne pour les helpers (spawnShockwave, spawnEtincelles).
+  // Wrapper positionne pour les helpers (spawnShockwave).
   const matWrap = document.createElement('div');
   matWrap.className = 'step-B4__matrix-wrap';
   slide.appendChild(matWrap);
@@ -318,18 +326,7 @@ function buildSlide2(wrap) {
     }
   }
 
-  const sousTitre = document.createElement('p');
-  sousTitre.className = 'sous-titre step-B4__sous-titre';
-  sousTitre.textContent = 'elle est en vie : regarde ta capsule';
-  slide.appendChild(sousTitre);
-  sousTitre2El = sousTitre;
-
-  const tuko = document.createElement('div');
-  tuko.className = 'tuko-mascotte';
-  tuko.dataset.pose = 'emerveille';
-  tuko.dataset.position = 'bas-gauche';
-  slide.appendChild(tuko);
-  tuko2El = tuko;
+  // Sous-titre + tuko-mascotte emerveille retires sur demande Taki.
 
   const cta = document.createElement('button');
   cta.type = 'button';
@@ -360,19 +357,13 @@ function showSlide2(skipIntroAnim) {
   // Reset visuel matrice.
   matrixCells.forEach(c => { c.el.className = 'matrice-8x8__pixel'; });
   matrixEl.classList.remove('is-respirante');
-  sousTitre2El.classList.remove('is-visible');
   cta2El.classList.remove('is-visible');
   titreAppuieEl.classList.remove('is-pulsing');
-
-  // Etincelles cyan continues autour de la matrice (helper partage).
-  if (stopSparkles) stopSparkles();
-  stopSparkles = spawnEtincelles(matrixWrapEl, { duree: 0, densite: 'normale' });
 
   if (skipIntroAnim) {
     // Reprise : etat idle stable.
     matrixCells.forEach(c => c.el.classList.add('is-on-jaune'));
     matrixEl.classList.add('is-respirante');
-    sousTitre2El.classList.add('is-visible');
     cta2El.classList.add('is-visible');
     schedulePatternCycle();
     return;
@@ -388,9 +379,7 @@ function backToSlide1() {
   bandeauEl.classList.remove('bandeau-pulsant--ok');
   bandeauEl.classList.add('bandeau-pulsant--alerte');
   bandeauEl.classList.remove('step-B4__bandeau--flash');
-  bandeauTextEl.textContent = "n'allume pas : attends le GO";
-  if (tuko1El) tuko1El.dataset.pose = 'stop';
-  if (stopSparkles) { stopSparkles(); stopSparkles = null; }
+  bandeauTextEl.textContent = "N'ALLUME PAS : ATTENDS LE GO";
   showSlide1();
   persist();
 }
@@ -460,7 +449,6 @@ function spiralLightUp() {
       c.el.classList.add('is-on-jaune');
     });
     matrixEl.classList.add('is-respirante');
-    sousTitre2El.classList.add('is-visible');
     cta2El.classList.add('is-visible');
     schedulePatternCycle();
   }, flashAt + 1300);
@@ -578,20 +566,147 @@ function injectStyles() {
       animation: stepB4-titre-smash var(--d-normal) var(--ease-bounce) 100ms forwards;
     }
 
-    .step-B4__image {
-      width: min(640px, 55%);
-      max-height: 320px;
+    /* Wrapper centre : ancre le faisceau rotatif + la card batterie. */
+    .step-B4__image-wrap {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+
+    /* Card avec contour neo-brutaliste autour de l'image batterie. */
+    .step-B4__image-card {
+      position: relative;
+      z-index: 2;
+      background: var(--paper);
+      border: var(--border);
+      box-shadow: var(--shadow-lg);
+      border-radius: var(--r-md);
+      padding: var(--s-3);
+      display: grid;
+      place-items: center;
       opacity: 0;
       transform: translateY(20px);
       animation: stepB4-fade-in var(--d-slow) var(--ease-out) 350ms forwards,
                  stepB4-bobbing 3s ease-in-out 950ms infinite;
     }
 
+    .step-B4__image {
+      display: block;
+      width: auto;
+      max-width: min(420px, 36vw);
+      max-height: clamp(240px, 32vh, 400px);
+      height: auto;
+      object-fit: contain;
+    }
+
+    /* Faisceau rotatif jaune autour de la card (12 rayons fins, sens horaire). */
+    .step-B4__beam {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: clamp(640px, 60vw, 900px);
+      height: clamp(640px, 60vw, 900px);
+      background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 1deg,
+        var(--accent-3) 4deg 5deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 8deg,
+        transparent 12deg 30deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 31deg,
+        var(--accent-3) 34deg 35deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 38deg,
+        transparent 42deg 60deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 61deg,
+        var(--accent-3) 64deg 65deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 68deg,
+        transparent 72deg 90deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 91deg,
+        var(--accent-3) 94deg 95deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 98deg,
+        transparent 102deg 120deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 121deg,
+        var(--accent-3) 124deg 125deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 128deg,
+        transparent 132deg 150deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 151deg,
+        var(--accent-3) 154deg 155deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 158deg,
+        transparent 162deg 180deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 181deg,
+        var(--accent-3) 184deg 185deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 188deg,
+        transparent 192deg 210deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 211deg,
+        var(--accent-3) 214deg 215deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 218deg,
+        transparent 222deg 240deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 241deg,
+        var(--accent-3) 244deg 245deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 248deg,
+        transparent 252deg 270deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 271deg,
+        var(--accent-3) 274deg 275deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 278deg,
+        transparent 282deg 300deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 301deg,
+        var(--accent-3) 304deg 305deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 308deg,
+        transparent 312deg 330deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 331deg,
+        var(--accent-3) 334deg 335deg,
+        color-mix(in srgb, var(--accent-3) 30%, transparent) 338deg,
+        transparent 342deg 360deg
+      );
+      -webkit-mask: radial-gradient(circle, transparent 28%, black 38%, black 55%, transparent 90%);
+      mask:         radial-gradient(circle, transparent 28%, black 38%, black 55%, transparent 90%);
+      pointer-events: none;
+      filter: blur(2px);
+      z-index: 1;
+      opacity: 0;
+      transform: translate(-50%, -50%) rotate(0deg);
+      animation: stepB4-beam-fade 600ms var(--ease-out) 600ms forwards,
+                 stepB4-beam-rotate 16s linear 600ms infinite;
+    }
+
+    /* Important : conserver translate(-50%,-50%) dans chaque keyframe rotate
+       sinon le faisceau perd son centrage et saute. */
+    @keyframes stepB4-beam-rotate {
+      0%   { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    @keyframes stepB4-beam-fade {
+      from { opacity: 0; }
+      to   { opacity: 0.75; }
+    }
+
     .step-B4__bandeau {
       width: min(900px, 80%);
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: var(--s-3);
       transform: scale(0.85);
       opacity: 0;
       animation: stepB4-bandeau-impact var(--d-slow) var(--ease-bounce) 500ms forwards;
+    }
+
+    .step-B4__bandeau-icon {
+      font-family: var(--display);
+      font-size: clamp(48px, 4.6vw, 72px);
+      font-weight: 900;
+      line-height: 1;
+      color: var(--ink);
+      animation: stepB4-bandeau-icon-blink 1.2s ease-in-out infinite;
+    }
+
+    @keyframes stepB4-bandeau-icon-blink {
+      0%, 100% { transform: scale(1)    rotate(-3deg); opacity: 1; }
+      50%      { transform: scale(1.12) rotate(3deg);  opacity: 0.85; }
     }
 
     .step-B4__bandeau--flash {
@@ -605,11 +720,9 @@ function injectStyles() {
     }
 
     .step-B4__cta2 {
-      position: absolute;
-      bottom: var(--s-5);
-      left: 50%;
-      transform: translateX(-50%);
+      white-space: nowrap;
       opacity: 0;
+      transform: translateY(10px);
     }
     .step-B4__cta2.is-visible {
       animation: stepB4-cta-pop var(--d-normal) var(--ease-bounce) forwards;
@@ -620,12 +733,13 @@ function injectStyles() {
       align-items: center;
       justify-items: center;
       gap: var(--s-4);
-      padding: var(--s-6);
+      padding: var(--s-5) var(--s-6) var(--s-8);
       text-align: center;
     }
 
     .step-B4__titre-appuie {
-      font-size: var(--t-hero);
+      font-size: clamp(72px, 7vw, 110px);
+      white-space: nowrap;
       opacity: 0;
       transform: scale(0);
       animation: stepB4-titre-smash var(--d-normal) var(--ease-bounce) forwards;
@@ -639,14 +753,6 @@ function injectStyles() {
       position: relative;
       display: grid;
       place-items: center;
-    }
-
-    .step-B4__sous-titre {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    .step-B4__sous-titre.is-visible {
-      animation: stepB4-fade-in var(--d-slow) var(--ease-out) forwards;
     }
 
     .step-B4__flash {
@@ -689,9 +795,9 @@ function injectStyles() {
     }
 
     @keyframes stepB4-cta-pop {
-      0%   { opacity: 0; transform: translate(-50%, 10px) scale(0.95); }
-      60%  { opacity: 1; transform: translate(-50%, 0)    scale(1.05); }
-      100% { opacity: 1; transform: translate(-50%, 0)    scale(1); }
+      0%   { opacity: 0; transform: translateY(10px) scale(0.95); }
+      60%  { opacity: 1; transform: translateY(0)    scale(1.05); }
+      100% { opacity: 1; transform: translateY(0)    scale(1); }
     }
 
     @keyframes stepB4-appuie-pulse {

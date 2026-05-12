@@ -1,7 +1,12 @@
 // D1-activite-bouton.js : "LE BOUTON A 3 LANGUES" (page magazine 14).
-// Fiche : doc interne
-// utilise .scenario-card + .scenario-card-grid--1x3 partages .
-//        Override local du grid-template-rows interne pour titre + demo + graph + label.
+// V2 : utilise .matrice-8x8--mini partagee + timeline jaune dessous.
+// 3 cards : APPUI COURT / LONG / DOUBLE. Chaque card affiche :
+//   - titre
+//   - mini matrice 8x8 statique avec le pattern jaune correspondant
+//   - timeline (graph) sous la matrice
+//   - label court ("un message", "une duree", "une repetition")
+// Conventions : padding wrap var(--s-3) var(--s-5) var(--s-8) var(--s-5)
+//   pour aligner CTA a 128px du footer. CTA sans chevron, animation: none.
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';
@@ -9,322 +14,298 @@ import { play } from '../core/audio.js';
 
 const STYLE_ID = 'step-D1-styles';
 
+// Patterns matrice 8x8 (indices = row*8 + col, cf. memoire matrice_8x8_system).
+// Tous les patterns occupent les colonnes specifiees sur les rows 4 a 7 (bas).
+const PATTERN_COURT = new Set([
+  // col 2 sur rows 4-7 (1 colonne verticale)
+  34, 42, 50, 58,
+]);
+
+const PATTERN_LONG = new Set([
+  // cols 2-6 sur rows 4-7 (rectangle 5 colonnes x 4 rows)
+  34, 35, 36, 37, 38,
+  42, 43, 44, 45, 46,
+  50, 51, 52, 53, 54,
+  58, 59, 60, 61, 62,
+]);
+
+const PATTERN_DOUBLE = new Set([
+  // cols 2 et 5 sur rows 4-7 (2 colonnes verticales separees)
+  34, 37,
+  42, 45,
+  50, 53,
+  58, 61,
+]);
+
 const STYLE_TEXT = `
 .step-D1 {
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-rows: auto 1fr auto auto;
-  padding: var(--s-5) var(--s-5) var(--s-4);
+  grid-template-rows: auto auto 1fr auto auto;
+  padding: var(--s-3) var(--s-5) var(--s-8) var(--s-5);
   gap: var(--s-3);
-  pointer-events: none;
+  background: var(--bg);
+  overflow: hidden;
 }
-.step-D1__title-block {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--s-1);
-}
+
+/* ----- Title hero --------------------------------------------------------- */
+
 .step-D1__titre {
   font-family: var(--display);
-  font-size: var(--t-h1);
+  font-size: clamp(56px, 5.4vw, 88px);
   font-weight: 900;
   letter-spacing: -0.01em;
+  line-height: 1;
   text-transform: uppercase;
   color: var(--ink);
   margin: 0;
+  text-align: center;
+  justify-self: center;
   opacity: 0;
   transform: scale(0);
 }
+
 .step-D1__titre.is-in {
   animation: d1-smash 400ms var(--ease-bounce) forwards;
 }
+
 @keyframes d1-smash {
   0%   { opacity: 0; transform: scale(0); }
   60%  { opacity: 1; transform: scale(1.15); }
   100% { opacity: 1; transform: scale(1); }
 }
+
+/* ----- Sous-titre simple (option) ----------------------------------------- */
+
 .step-D1__sous {
-  font-family: var(--display);
-  font-size: var(--t-body-xl);
+  font-family: var(--body);
+  font-size: clamp(18px, 1.6vw, 24px);
   font-weight: 600;
-  text-transform: lowercase;
   color: var(--ink);
+  text-align: center;
+  justify-self: center;
   margin: 0;
-  opacity: 0;
-  transform: translateY(20px);
+  opacity: 0.85;
 }
-.step-D1__sous.is-in {
-  animation: d1-fade-up 400ms var(--ease-out) 300ms forwards;
-}
-@keyframes d1-fade-up {
-  to { opacity: 1; transform: translateY(0); }
-}
-/* Layout 3 cards en parallele (utilise .scenario-card-grid--1x3 partage). */
+
+/* ----- Cards row : 3 cards parallel --------------------------------------- */
+
 .step-D1__cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-4);
   align-items: stretch;
   align-self: center;
-  width: 100%;
-  pointer-events: auto;
+  width: min(1600px, 100%);
+  justify-self: center;
 }
-/* D1 override : structure interne specifique (titre + zone demo + graph + label).
-   Le composant partage .scenario-card fournit fond, border, shadow, padding, border-radius. */
+
 .step-D1__card {
-  --d1-cycle: 3.2s;
-  grid-template-rows: auto 1fr auto auto;
+  /* Var partagee entre la mini-matrice et le graph pour alignement exact */
+  --d1-matrix-width: clamp(220px, 19vw, 300px);
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--r-lg);
+  padding: var(--s-3);
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  gap: var(--s-2);
   text-align: center;
-  cursor: var(--cursor-pointer);
+  place-items: center;
+  align-content: center;
   opacity: 0;
   transform: scale(0);
   transition: transform var(--d-fast) var(--ease-out),
-              box-shadow var(--d-fast) var(--ease-out),
-              border-color var(--d-fast) var(--ease-out);
+              box-shadow var(--d-fast) var(--ease-out);
 }
+
 .step-D1__card.is-in {
   animation: d1-card-pop 350ms var(--ease-bounce) forwards;
 }
-.step-D1__card:nth-child(1).is-in { animation-delay: 800ms; }
-.step-D1__card:nth-child(2).is-in { animation-delay: 1000ms; }
-.step-D1__card:nth-child(3).is-in { animation-delay: 1200ms; }
+
+.step-D1__card:nth-child(1).is-in { animation-delay: 700ms; }
+.step-D1__card:nth-child(2).is-in { animation-delay: 850ms; }
+.step-D1__card:nth-child(3).is-in { animation-delay: 1000ms; }
+
 @keyframes d1-card-pop {
   0%   { opacity: 0; transform: scale(0); }
   60%  { opacity: 1; transform: scale(1.05); }
   100% { opacity: 1; transform: scale(1); }
 }
-.step-D1__card.is-in:hover:not(.is-focus) {
-  animation: none;
-  transform: translate(-3px, -3px);
-  box-shadow: var(--shadow-lg);
-}
-.step-D1__card.is-in.is-focus {
-  animation: none;
-  --d1-cycle: 2.5s;
-  transform: scale(1.05);
-  box-shadow: var(--shadow-accent-1);
-  border-color: var(--accent-1);
-}
+
 .step-D1__card__titre {
   font-family: var(--display);
-  font-size: var(--t-h2);
+  font-size: clamp(24px, 2.2vw, 36px);
   font-weight: 900;
   text-transform: uppercase;
-  margin: 0;
-  letter-spacing: 0.01em;
-}
-.step-D1__card__tuko-zone {
-  display: grid;
-  place-items: center;
-  background: var(--bg-2);
-  border: var(--border-thin);
-  border-radius: var(--r-md);
-  min-height: 140px;
-  position: relative;
-  overflow: hidden;
-}
-/* Tuko miniatures inline (utilisent .tuko-mascotte[data-position=inline] partage). */
-.step-D1 .tuko-mascotte[data-position="inline"] {
-  --tuko-mascotte-size: 100px;
+  color: var(--ink);
+  letter-spacing: -0.005em;
   margin: 0;
 }
-.step-D1__card__tuko-zone .tuko-mascotte--court {
-  animation: d1-tuko-court var(--d1-cycle) infinite ease-in-out;
+
+/* Mini matrice 8x8 partagee : width = --d1-matrix-width (var sur la card). */
+.step-D1 .matrice-8x8--mini {
+  --matrice-8x8-size: var(--d1-matrix-width);
 }
-@keyframes d1-tuko-court {
-  0%, 6%   { transform: scale(1); }
-  9%       { transform: scale(0.92); }
-  16%      { transform: scale(1); }
-  100%     { transform: scale(1); }
+
+/* Pixels eteints d'office. JS ajoute .is-lit en cascade pour animer. */
+.step-D1 .matrice-8x8__pixel.is-on {
+  opacity: 0;
+  transform: scale(0.4);
 }
-.step-D1__card__tuko-zone .tuko-mascotte--long {
-  animation: d1-tuko-long var(--d1-cycle) infinite ease-in-out;
+
+.step-D1 .matrice-8x8__pixel.is-on.is-lit {
+  animation: d1-pixel-light 280ms var(--ease-bounce) forwards;
 }
-@keyframes d1-tuko-long {
-  0%, 4%   { transform: scale(1); }
-  10%      { transform: scale(0.92); }
-  50%      { transform: scale(0.92); }
-  56%      { transform: scale(1); }
-  100%     { transform: scale(1); }
+
+@keyframes d1-pixel-light {
+  0%   { opacity: 0; transform: scale(0.4); }
+  60%  { opacity: 1; transform: scale(1.18); }
+  100% { opacity: 1; transform: scale(1); }
 }
-.step-D1__card__tuko-zone .tuko-mascotte--double {
-  animation: d1-tuko-double var(--d1-cycle) infinite ease-in-out;
-}
-@keyframes d1-tuko-double {
-  0%, 5%   { transform: scale(1); }
-  8%       { transform: scale(0.92); }
-  14%      { transform: scale(1); }
-  17%      { transform: scale(0.92); }
-  23%      { transform: scale(1); }
-  100%     { transform: scale(1); }
-}
+
+/* ----- Graph : aligne sur la matrice (meme width, meme grid 8 cols, ------ */
+/* memes gap/padding) MAIS style visuel different de la matrice :          */
+/* fond clair (bg-2), pas de bordure noire epaisse, cells "barres" jaunes  */
+/* avec border ink. Style "timeline" magazine, pas "ecran LED".            */
+
 .step-D1__graph {
-  position: relative;
-  height: 56px;
+  width: var(--d1-matrix-width);
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 3px;
+  padding: 8px;
+  box-sizing: border-box;
   background: var(--bg-2);
   border: var(--border-thin);
   border-radius: var(--r-sm);
-  overflow: hidden;
+  aspect-ratio: 8 / 1.6;
+  position: relative;
 }
-.step-D1__graph__axis {
+
+/* Axe horizontal en bas (signature graph magazine) */
+.step-D1__graph::after {
+  content: '';
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 8px;
+  right: 8px;
+  bottom: 6px;
   height: 2px;
   background: var(--ink);
-  opacity: 0.4;
+  opacity: 0.45;
 }
-.step-D1__bar {
-  position: absolute;
-  bottom: 2px;
+
+.step-D1__graph__cell {
+  /* Cells eteintes : invisibles (juste l'espacement) */
+}
+
+.step-D1__graph__cell.is-on {
+  background: var(--accent-3);
+  border: 2px solid var(--ink);
+  border-radius: 3px 3px 0 0;
+  align-self: stretch;
+}
+
+/* ----- Reveal button (anti-spoiler) -------------------------------------- */
+/* Bouton visible AU BOOT a la place de la matrice. Clic = matrice/graph    */
+/* apparaissent + cascade LED. Sans ce bouton la reponse serait spoilee.    */
+
+.step-D1__reveal-btn {
+  width: var(--d1-matrix-width);
+  height: var(--d1-matrix-width);
+  font-family: var(--display);
+  font-size: clamp(22px, 2vw, 32px);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
   background: var(--accent-1);
-  border-radius: 2px 2px 0 0;
-  height: 0;
-  width: 0;
-  transform-origin: left bottom;
+  color: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--r-md);
+  cursor: var(--cursor-pointer);
+  display: grid;
+  place-items: center;
+  transition: transform 200ms var(--ease-out),
+              box-shadow 200ms var(--ease-out);
 }
-.step-D1__bar--court {
-  left: 18%;
-  width: 12%;
-  animation: d1-bar-court var(--d1-cycle) infinite ease-out;
+
+.step-D1__reveal-btn:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: 14px 14px 0 var(--ink);
 }
-@keyframes d1-bar-court {
-  0%       { height: 0; opacity: 0; }
-  6%       { height: 36px; opacity: 1; }
-  35%      { height: 36px; opacity: 1; }
-  50%      { height: 0; opacity: 0; }
-  100%     { height: 0; opacity: 0; }
+
+.step-D1__reveal-btn:active {
+  transform: translate(-2px, -2px);
 }
-.step-D1__bar--long {
-  left: 12%;
-  height: 42px;
-  width: 0;
-  animation: d1-bar-long var(--d1-cycle) infinite ease-out;
-}
-@keyframes d1-bar-long {
-  0%       { width: 0; opacity: 0; }
-  4%       { opacity: 1; }
-  50%      { width: 60%; opacity: 1; }
-  60%      { width: 60%; opacity: 1; }
-  74%      { width: 0; opacity: 0; }
-  100%     { width: 0; opacity: 0; }
-}
-/* Long bar : micro-vibration pendant l'etirement (signature pedagogique). */
-.step-D1__bar--long.is-vibrating {
-  animation: d1-bar-long var(--d1-cycle) infinite ease-out,
-             d1-bar-vibrate 80ms infinite linear;
-}
-@keyframes d1-bar-vibrate {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-0.5px); }
-}
-.step-D1__bar--double-1 {
-  left: 16%;
-  width: 10%;
-  animation: d1-bar-double-1 var(--d1-cycle) infinite ease-out;
-}
-.step-D1__bar--double-2 {
-  left: 36%;
-  width: 10%;
-  animation: d1-bar-double-2 var(--d1-cycle) infinite ease-out;
-}
-@keyframes d1-bar-double-1 {
-  0%       { height: 0; opacity: 0; }
-  6%       { height: 36px; opacity: 1; }
-  40%      { height: 36px; opacity: 1; }
-  52%      { height: 0; opacity: 0; }
-  100%     { height: 0; opacity: 0; }
-}
-@keyframes d1-bar-double-2 {
-  0%, 14%  { height: 0; opacity: 0; }
-  20%      { height: 36px; opacity: 1; }
-  40%      { height: 36px; opacity: 1; }
-  52%      { height: 0; opacity: 0; }
-  100%     { height: 0; opacity: 0; }
-}
+
 .step-D1__card__label {
   font-family: var(--display);
-  font-size: var(--t-body-xl);
+  font-size: clamp(18px, 1.6vw, 24px);
   font-weight: 700;
   text-transform: lowercase;
-  margin: 0;
   color: var(--ink);
-}
-.step-D1__rappel {
-  text-align: center;
-  font-family: var(--mono);
-  font-size: var(--t-body);
-  letter-spacing: 0.08em;
-  color: var(--ink);
-  opacity: 0;
-  transform: translateY(10px);
   margin: 0;
 }
-.step-D1__rappel.is-in {
-  animation: d1-fade-up 400ms var(--ease-out) 1500ms forwards;
-}
-.step-D1__bottom {
+
+/* ----- CTA bottom : convention CTA (animation:none, sans chevron) --------- */
+
+.step-D1__cta-area {
   display: grid;
-  grid-template-columns: 200px 1fr 200px;
-  align-items: end;
-  gap: var(--s-4);
-  pointer-events: auto;
+  justify-items: center;
+  margin-top: var(--s-3);
 }
-/* Tuko principal en bas-gauche (composant partage, position relative au bottom). */
-.step-D1__bottom .tuko-mascotte {
-  opacity: 0;
-  transform: translateX(-100px);
-  position: relative;
-  left: 0;
-  bottom: 0;
-}
-.step-D1__bottom .tuko-mascotte.is-in {
-  animation: d1-tuko-enter var(--d-slow) var(--ease-out) 1700ms forwards;
-}
-@keyframes d1-tuko-enter {
-  to { opacity: 1; transform: translateX(0); }
-}
+
 .step-D1__cta {
-  justify-self: center;
-  align-self: end;
+  animation: none !important;
   opacity: 0;
   transform: scale(0);
-  animation: none;
 }
+
 .step-D1__cta.is-in {
-  animation: d1-cta-pop 350ms var(--ease-bounce) 2200ms forwards,
-             cta-idle-pulse 2s var(--ease-out) 2600ms infinite;
+  animation: d1-cta-pop 350ms var(--ease-bounce) 1500ms forwards !important;
 }
+
 @keyframes d1-cta-pop {
   0%   { opacity: 0; transform: scale(0); }
-  60%  { opacity: 1; transform: scale(1.15); }
+  60%  { opacity: 1; transform: scale(1.1); }
   100% { opacity: 1; transform: scale(1); }
 }
 `;
 
+// Colonnes (0-7) du graph qui s'allument : MIROIR EXACT des colonnes
+// matrice. La barre jaune du graph est donc verticalement alignee
+// au-dessus de la colonne matrice allumee correspondante.
 const CARD_DEFS = [
   {
     key: 'court',
     titre: 'APPUI COURT',
-    pose: 'presentateur',
+    pattern: PATTERN_COURT,
+    graphLitCols: [2],
     label: 'un message',
-    bars: [{ kind: 'court' }],
   },
   {
     key: 'long',
     titre: 'APPUI LONG',
-    pose: 'pedagogique',
-    label: 'une duree',
-    bars: [{ kind: 'long', vibrating: true }],
+    pattern: PATTERN_LONG,
+    graphLitCols: [2, 3, 4, 5, 6],
+    label: 'une durée',
   },
   {
     key: 'double',
     titre: 'DOUBLE APPUI',
-    pose: 'mysterieux',
-    label: 'une repetition',
-    bars: [{ kind: 'double-1' }, { kind: 'double-2' }],
+    pattern: PATTERN_DOUBLE,
+    graphLitCols: [2, 5],
+    label: 'une répétition',
   },
 ];
+
+// Delays d'apparition des cards (cf. CSS animation-delay)
+const CARD_BASE_DELAYS = [700, 850, 1000];
+const CARD_POP_DURATION = 350;
+const PIXEL_CASCADE_STEP_MS = 30;
 
 let scene = null;
 let domNodes = [];
@@ -337,7 +318,6 @@ let containerRef = null;
 let navAPIRef = null;
 let savedStateRef = null;
 let cardsEls = [];
-let focusedKey = null;
 let viewed = false;
 
 function injectStyle() {
@@ -347,16 +327,26 @@ function injectStyle() {
   el.textContent = STYLE_TEXT;
   document.head.appendChild(el);
 }
+
 function removeStyle() {
   const el = document.querySelector('#' + STYLE_ID);
   if (el) el.remove();
 }
 
-function setFocus(key) {
-  focusedKey = (focusedKey === key) ? null : key;
-  cardsEls.forEach((cardEl) => {
-    cardEl.classList.toggle('is-focus', cardEl.dataset.cardKey === focusedKey);
-  });
+function buildMiniMatrice(litSet) {
+  const matrice = document.createElement('div');
+  matrice.className = 'matrice-8x8 matrice-8x8--mini';
+  matrice.setAttribute('role', 'img');
+  matrice.setAttribute('aria-label', 'Matrice 8 par 8');
+  for (let i = 0; i < 64; i++) {
+    const pixel = document.createElement('div');
+    pixel.className = 'matrice-8x8__pixel';
+    if (litSet.has(i)) {
+      pixel.classList.add('is-on', 'is-on-jaune');
+    }
+    matrice.appendChild(pixel);
+  }
+  return matrice;
 }
 
 function build(navAPI) {
@@ -364,128 +354,126 @@ function build(navAPI) {
   const wrap = document.createElement('div');
   wrap.className = 'step-D1';
 
-  // Title block
-  const titleBlock = document.createElement('div');
-  titleBlock.className = 'step-D1__title-block';
+  // Title
   const titre = document.createElement('h1');
   titre.className = 'step-D1__titre';
-  titre.textContent = 'LE BOUTON A 3 LANGUES';
-  titleBlock.appendChild(titre);
+  titre.textContent = 'LE BOUTON À 3 LANGUES';
+  wrap.appendChild(titre);
+
+  // Sous-titre simple
   const sous = document.createElement('p');
   sous.className = 'step-D1__sous';
-  sous.textContent = 'essaie chacune sur ta capsule';
-  titleBlock.appendChild(sous);
-  wrap.appendChild(titleBlock);
+  sous.textContent = 'essaie chacune sur ta capsule.';
+  wrap.appendChild(sous);
 
-  // Cards row (utilise .scenario-card-grid--1x3 partage ).
+  // Cards row
   const cardsRow = document.createElement('div');
-  cardsRow.className = 'scenario-card-grid scenario-card-grid--1x3 step-D1__cards';
+  cardsRow.className = 'step-D1__cards';
   cardsEls = CARD_DEFS.map((def) => {
-    // Composant partage .scenario-card + classe locale pour override grid-template-rows.
     const card = document.createElement('div');
-    card.className = 'scenario-card step-D1__card';
+    card.className = 'step-D1__card';
     card.dataset.cardKey = def.key;
 
+    // Titre
     const ctitre = document.createElement('h2');
     ctitre.className = 'step-D1__card__titre';
     ctitre.textContent = def.titre;
     card.appendChild(ctitre);
 
-    const tukoZone = document.createElement('div');
-    tukoZone.className = 'step-D1__card__tuko-zone';
-    // Mini Tuko : composant partage avec data-position=inline + classe modifieur locale.
-    const tukoMini = document.createElement('div');
-    tukoMini.className = `tuko-mascotte tuko-mascotte--${def.key}`;
-    tukoMini.dataset.pose = def.pose;
-    tukoMini.dataset.position = 'inline';
-    tukoZone.appendChild(tukoMini);
-    card.appendChild(tukoZone);
+    // Bouton reveal (visible au boot, cache au clic)
+    const revealBtn = document.createElement('button');
+    revealBtn.type = 'button';
+    revealBtn.className = 'step-D1__reveal-btn';
+    revealBtn.textContent = "VOIR L'EFFET";
+    card.appendChild(revealBtn);
 
+    // Mini matrice 8x8 (cachee au boot, revelee au clic du bouton)
+    const matrice = buildMiniMatrice(def.pattern);
+    matrice.style.display = 'none';
+    card.appendChild(matrice);
+
+    // Graph aligne sur la matrice (cache au boot, revele au clic)
     const graph = document.createElement('div');
     graph.className = 'step-D1__graph';
-    const axis = document.createElement('span');
-    axis.className = 'step-D1__graph__axis';
-    graph.appendChild(axis);
-    def.bars.forEach((b) => {
-      const bar = document.createElement('span');
-      bar.className = `step-D1__bar step-D1__bar--${b.kind}`;
-      if (b.vibrating) bar.classList.add('is-vibrating');
-      graph.appendChild(bar);
-    });
+    graph.style.display = 'none';
+    for (let c = 0; c < 8; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'step-D1__graph__cell';
+      if (def.graphLitCols.includes(c)) cell.classList.add('is-on');
+      graph.appendChild(cell);
+    }
     card.appendChild(graph);
 
+    // Label (cache au boot, revele au clic)
     const label = document.createElement('p');
     label.className = 'step-D1__card__label';
     label.textContent = def.label;
+    label.style.display = 'none';
     card.appendChild(label);
+
+    // Clic reveal : cache le bouton, montre matrice/graph/label,
+    // declenche la cascade LED.
+    const onReveal = () => {
+      revealBtn.style.display = 'none';
+      matrice.style.display = '';
+      graph.style.display = '';
+      label.style.display = '';
+      play('pop');
+      const litPixels = matrice.querySelectorAll('.matrice-8x8__pixel.is-on');
+      litPixels.forEach((pixel, i) => {
+        const t = setTimeout(() => pixel.classList.add('is-lit'),
+          i * PIXEL_CASCADE_STEP_MS);
+        timers.push(t);
+      });
+    };
+    revealBtn.addEventListener('click', onReveal);
+    handlers.push([revealBtn, 'click', onReveal]);
 
     cardsRow.appendChild(card);
     return card;
   });
   wrap.appendChild(cardsRow);
 
-  // Rappel
-  const rappel = document.createElement('p');
-  rappel.className = 'step-D1__rappel';
-  rappel.textContent = 'regarde ta capsule : le dessin change selon ta presse';
-  wrap.appendChild(rappel);
-
-  // Bottom row
-  const bottom = document.createElement('div');
-  bottom.className = 'step-D1__bottom';
-  // Tuko principal : composant partage [data-pose=pedagogique].
-  const tuko = document.createElement('div');
-  tuko.className = 'tuko-mascotte';
-  tuko.dataset.pose = 'pedagogique';
-  tuko.dataset.position = 'inline';
-  bottom.appendChild(tuko);
-
+  // CTA area
+  const ctaArea = document.createElement('div');
+  ctaArea.className = 'step-D1__cta-area';
   const cta = document.createElement('button');
   cta.type = 'button';
   cta.className = 'cta-primary step-D1__cta';
-  cta.textContent = '▶ ON FAIT UN MINI-JEU';
+  cta.textContent = 'ON FAIT UN MINI-JEU';
   cta.disabled = true;
-  bottom.appendChild(cta);
-
-  bottom.appendChild(document.createElement('span'));
-  wrap.appendChild(bottom);
+  ctaArea.appendChild(cta);
+  wrap.appendChild(ctaArea);
 
   stage.appendChild(wrap);
   domNodes.push(wrap);
 
-  // Trigger entrance (CSS handles delays).
+  // Sequence d'entree
   requestAnimationFrame(() => {
     titre.classList.add('is-in');
-    sous.classList.add('is-in');
-    rappel.classList.add('is-in');
     cardsEls.forEach((c) => c.classList.add('is-in'));
-    tuko.classList.add('is-in');
     cta.classList.add('is-in');
   });
 
-  // CTA enabled after entrance.
-  const tEnable = setTimeout(() => { cta.disabled = false; }, 2600);
+  // (Cascade LED n'est plus auto au boot : declenchee au clic du bouton
+  // reveal de chaque card, pour ne pas spoiler la reponse.)
+
+  // CTA activable apres la sequence
+  const tEnable = setTimeout(() => { cta.disabled = false; }, 1900);
   timers.push(tEnable);
 
-  // Mark complete after entrance settles.
+  // Mark complete apres entree
   const tComplete = setTimeout(() => {
     viewed = true;
     navAPI.markComplete();
     navAPI.saveState({ steps: { D1: { viewed: true } } });
-  }, 3000);
+  }, 2200);
   timers.push(tComplete);
 
-  // Card click -> focus toggle.
-  cardsEls.forEach((cardEl) => {
-    const onClick = () => {
-      play('pop');
-      setFocus(cardEl.dataset.cardKey);
-    };
-    cardEl.addEventListener('click', onClick);
-    handlers.push([cardEl, 'click', onClick]);
-  });
+  // (Plus de listener click sur la card entiere : le bouton reveal a son
+  // propre handler et on ne veut pas de double trigger.)
 
-  // CTA click.
+  // CTA click
   const onCta = () => {
     if (cta.disabled) return;
     play('whoosh');
@@ -494,17 +482,6 @@ function build(navAPI) {
   };
   cta.addEventListener('click', onCta);
   handlers.push([cta, 'click', onCta]);
-
-  // Keyboard 1/2/3 to focus, ignore inputs (nav.js owns Espace/arrows/R).
-  const onKey = (e) => {
-    const tag = (e.target?.tagName || '').toLowerCase();
-    if (tag === 'input' || tag === 'textarea' || e.target?.isContentEditable) return;
-    if (e.key === '1') { e.preventDefault(); play('pop'); setFocus('court'); }
-    else if (e.key === '2') { e.preventDefault(); play('pop'); setFocus('long'); }
-    else if (e.key === '3') { e.preventDefault(); play('pop'); setFocus('double'); }
-  };
-  window.addEventListener('keydown', onKey);
-  handlers.push([window, 'keydown', onKey]);
 }
 
 export default {
@@ -521,7 +498,6 @@ export default {
     navAPIRef = navAPI;
     savedStateRef = savedState;
     viewed = !!(savedState && savedState.viewed);
-    focusedKey = null;
 
     scene = new Container();
     scene.label = 'step-D1';
@@ -543,7 +519,6 @@ export default {
     domNodes.forEach((n) => n.remove());
     domNodes = [];
     cardsEls = [];
-    focusedKey = null;
     if (scene) {
       scene.destroy({ children: true });
       scene = null;

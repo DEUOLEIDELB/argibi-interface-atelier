@@ -73,13 +73,25 @@ const CSS = `
   display: grid;
   place-items: end center;
   width: 100%;
-  padding-bottom: var(--s-3);
+  padding-bottom: var(--s-8);
 }
 
-.step-E1__tuko {
+.step-E1__tuko-help {
+  position: absolute;
+  bottom: var(--s-3);
+  left: var(--s-3);
+  width: clamp(280px, 22vw, 360px);
+  height: auto;
+  pointer-events: none;
   opacity: 0;
-  transform: translateX(-120%);
-  animation: e1-slide-in-tuko var(--d-slow) var(--ease-out) 1.4s forwards;
+  transform: translateX(-120px);
+  animation: e1-slide-in-tuko var(--d-slow) var(--ease-out) 1.4s forwards,
+             e1-tuko-bobbing 2.6s ease-in-out 2.4s infinite;
+  z-index: 1;
+}
+@keyframes e1-tuko-bobbing {
+  0%, 100% { transform: translate(0, 0)     rotate(-1.5deg); }
+  50%      { transform: translate(0, -6px)  rotate(1.5deg); }
 }
 
 .step-E1__cta {
@@ -166,11 +178,11 @@ function buildDom(navAPI) {
   heading.appendChild(sous);
   wrap.appendChild(heading);
 
-  // Tuko prete au combat — composant partage .tuko-mascotte (position absolue bas-gauche)
-  const tuko = document.createElement('div');
-  tuko.className = 'tuko-mascotte step-E1__tuko';
-  tuko.dataset.pose = 'combat';
-  tuko.dataset.position = 'bas-gauche';
+  // Tuko_help en bas-gauche, gros (sprite reel + slide-in + bobbing).
+  const tuko = document.createElement('img');
+  tuko.className = 'step-E1__tuko-help';
+  tuko.src = 'assets/sprites/tuko_help.png';
+  tuko.alt = '';
   wrap.appendChild(tuko);
 
   // Bottom row : CTA centree (Tuko est en position absolue, ne prend pas de place dans la grid)
@@ -262,7 +274,7 @@ export default {
   replay() {
     const wrap = domNodes[0];
     if (!wrap) return;
-    const els = wrap.querySelectorAll('.step-E1__alerte, .step-E1__titre, .step-E1__sous, .step-E1__tuko, .step-E1__cta');
+    const els = wrap.querySelectorAll('.step-E1__alerte, .step-E1__titre, .step-E1__sous, .step-E1__tuko-help, .step-E1__cta');
     els.forEach(el => {
       el.style.animation = 'none';
       void el.offsetWidth;

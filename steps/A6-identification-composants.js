@@ -1,262 +1,320 @@
-// A6-identification-composants.js — 3 slides successives.
-// Slide 1 : galerie 5 placeholders composants (referentiel, magazine p10).
-// Slide 2 : drag&drop 5 etiquettes vers 5 zones cibles sur la carte Argibi.
-// Slide 3 : 2 colonnes ENTREE/SORTIE + cards composants + input + AJOUTE.
-// Cf. doc interne.
+// A6-identification-composants.js — 3 slides.
+// Slide 1 : Affichage statique. Image carte au centre + 5 cards composants
+//           autour (rotations aleatoires pour effet playful).
+// Slide 2 : Meme image + 5 boules d'accroche dessus + 5 cards autour.
+//           L'enfant TIRE une ligne d'un point-card vers le bon point-carte.
+//           Faux = carte shake. Juste = confettis + ligne fige.
+// Slide 3 : 2 colonnes ENTREE / SORTIE + 10 cards a drag&drop en bas.
+//           Drop dans mauvaise colonne = shake colonne + retour pool.
+//
+// Pattern handlers : AbortController par slide pour cleanup propre lors des
+// transitions. Les handlers globaux (CTA, keydown) restent dans le tableau
+// classique car ils survivent aux changements de slide.
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';
 import { saveStepState, getStepState } from '../core/state.js';
-import { spawnConfettis, spawnShockwave } from '../core/effects.js';
+import { spawnConfettis } from '../core/effects.js';
 
 const STYLE_ID = 'step-A6-style';
 
+// 5 composants : labels + coords relatives (0-1) sur l'image.
+// >>> AJUSTER ICI les x/y pour caler les points sur la carte reelle. <<<
+// x : 0 = bord gauche de l'image, 1 = bord droit. y : 0 = haut, 1 = bas.
 const COMPOSANTS = [
-  { id: 'bouton',      label: 'bouton poussoir', col: 'entree' },
-  { id: 'interrupteur', label: 'interrupteur',    col: 'entree' },
-  { id: 'capteur',     label: 'capteur tactile', col: 'entree' },
-  { id: 'mc',          label: 'µC',              col: 'cerveau' },
-  { id: 'matrice',     label: 'matrice 8x8',     col: 'sortie' },
+  { id: 'bouton',  label: 'Bouton',                type: 'entree', x: 0.47, y: 0.63 },
+  { id: 'inter',   label: 'Interrupteur',          type: 'entree', x: 0.31, y: 0.64 },
+  { id: 'capteur', label: 'Capteur capacitif',     type: 'entree', x: 0.64, y: 0.57 },
+  { id: 'matrice', label: 'Microcontrôleur',       type: 'sortie', x: 0.68, y: 0.45 },
+  { id: 'segm',    label: 'Afficheur 7 segments',  type: 'sortie', x: 0.45, y: 0.52 },
 ];
+
+// Positions des CARDS-NOMS autour de la carte centrale, slides 1 et 2.
+// Coords relatives au conteneur .step-A6__layout (0,0 = top-left, 1,1 = bot-right).
+// `dotSide` : sur quel bord de la card se trouve le point d'ancrage
+// pour la ligne. Choix : 'right' | 'left' | 'top' | 'bottom'.
+// >>> AJUSTER ICI x/y et dotSide pour chaque card. <<<
+const CARD_POSITIONS = {
+  bouton:  { x: 0.30, y: 0.20, dotSide: 'right' },
+  inter:   { x: 0.20, y: 0.52, dotSide: 'right' },
+  capteur: { x: 0.74, y: 0.28, dotSide: 'left' },
+  matrice: { x: 0.64, y: 0.78, dotSide: 'left' },
+  segm:    { x: 0.30, y: 0.84, dotSide: 'top' },
+};
+
+const EXTRAS = [
+  { id: 'micro',  label: 'Microphone',  type: 'entree' },
+  { id: 'camera', label: 'Caméra',      type: 'entree' },
+  { id: 'hp',     label: 'Haut-parleur', type: 'sortie' },
+  { id: 'led',    label: 'LED',         type: 'sortie' },
+  { id: 'tv',     label: 'Écran TV',    type: 'sortie' },
+];
+
+const ALL_ITEMS = [...COMPOSANTS, ...EXTRAS];
 
 const STYLES = `
 .step-A6 {
   position: absolute; inset: 0;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  padding: var(--s-5);
-  gap: var(--s-3);
+  grid-template-rows: auto auto 1fr auto;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-5) var(--s-8) var(--s-5);
   background: var(--bg);
   overflow: hidden;
 }
 
-.step-A6__top {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: start;
-  gap: var(--s-3);
-}
+/* ----- Top : progress + titre --------------------------------------------- */
 
 .step-A6__progress-wrap {
-  grid-column: 1 / 4;
   display: grid;
   justify-items: center;
   gap: var(--s-1);
 }
 
 .step-A6__progress {
-  width: min(420px, 50vw);
+  width: min(420px, 40vw);
 }
 
 .step-A6__progress-label {
   font-family: var(--mono);
-  font-size: var(--t-tiny);
+  font-size: var(--t-small);
   letter-spacing: 0.32em;
   text-transform: lowercase;
+  color: var(--ink);
   opacity: 0.55;
 }
 
-.step-A6__counter {
-  position: absolute;
-  top: var(--s-5);
-  right: var(--s-5);
+.step-A6__title {
+  font-family: var(--display);
+  font-size: clamp(56px, 5.4vw, 88px);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0;
+  text-align: center;
+  justify-self: center;
 }
 
-.step-A6__consigne {
-  font-family: var(--display);
-  font-size: var(--t-h2);
-  font-weight: 900;
-  text-transform: uppercase;
-  text-align: center;
-  margin: 0;
-  letter-spacing: -0.01em;
-}
+/* ----- Main : zone changeante --------------------------------------------- */
+/* grid 1fr/1fr pour que le .step-A6__layout enfant prenne TOUTE la hauteur
+   disponible. Sans ca, layout.height = auto et les % top des cards ne
+   referencent rien -> impossible de bouger les cards en vertical. */
 
 .step-A6__main {
   display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: var(--s-3);
-  position: relative;
-}
-
-.step-A6__galerie {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(140px, 180px));
-  gap: var(--s-3);
-}
-
-.step-A6__placeholder {
-  background: var(--paper);
-  border: var(--border);
-  box-shadow: var(--shadow);
-  border-radius: var(--r-md);
-  padding: var(--s-3);
-  display: grid;
-  gap: var(--s-2);
-  text-align: center;
-  animation: a6-pulse 2.4s ease-in-out infinite;
-}
-
-@keyframes a6-pulse {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.03); }
-}
-
-.step-A6__placeholder-img {
-  background: var(--bg-2);
-  border: 2px dashed var(--ink);
-  border-radius: var(--r-md);
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  font-family: var(--mono);
-  font-size: var(--t-small);
-  opacity: 0.55;
-}
-
-.step-A6__placeholder-label {
-  font-family: var(--display);
-  font-size: var(--t-body);
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: -0.005em;
-}
-
-.step-A6__mag-note {
-  font-family: var(--mono);
-  font-size: var(--t-small);
-  letter-spacing: 0.12em;
-  opacity: 0.55;
-}
-
-/* Slide 2 : drag&drop --------------------------------------------------- */
-
-.step-A6__carte {
-  position: relative;
-  width: min(720px, 80vw);
-  height: 280px;
-  background: var(--paper);
-  border: var(--border);
-  box-shadow: var(--shadow-lg);
-  border-radius: var(--r-md);
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--s-3);
-  padding: var(--s-3);
-  align-items: center;
-  justify-items: center;
-}
-
-.step-A6__zone {
+  grid-template-rows: 1fr;
+  grid-template-columns: 1fr;
+  min-height: 0;
   width: 100%;
   height: 100%;
-  border: 2px dashed var(--accent-1);
-  border-radius: var(--r-md);
-  display: grid;
-  place-items: center;
-  font-family: var(--mono);
-  font-size: var(--t-small);
-  letter-spacing: 0.12em;
-  color: var(--accent-1);
-  text-align: center;
-  background: color-mix(in srgb, var(--accent-1) 6%, transparent);
-  animation: a6-zone-pulse 2.2s ease-in-out infinite;
 }
 
-@keyframes a6-zone-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 transparent; }
-  50%      { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent-1) 12%, transparent); }
+/* ----- Slides 1 & 2 : layout = canvas relatif. Carte centree, cards en --- */
+/* ----- absolute autour selon CARD_POSITIONS.                              */
+
+.step-A6__layout {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
-.step-A6__zone.is-hover {
-  background: color-mix(in srgb, var(--accent-1) 18%, transparent);
-  transform: scale(1.06);
-}
-
-.step-A6__zone.is-correct {
-  border-color: var(--accent-3);
-  background: var(--accent-3);
-  color: var(--ink);
-  font-family: var(--display);
-  font-weight: 900;
-  text-transform: uppercase;
-  font-size: var(--t-body);
-  letter-spacing: -0.005em;
-  animation: none;
-}
-
-.step-A6__etiquettes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-2);
-  justify-content: center;
-  width: min(900px, 90vw);
-}
-
-.step-A6__etiquette {
+.step-A6__comp-card {
+  position: absolute;
+  transform: translate(-50%, -50%) rotate(var(--rot, 0deg));
+  width: clamp(280px, 24vw, 400px);
   background: var(--paper);
-  color: var(--ink);
   border: var(--border);
   box-shadow: var(--shadow);
   border-radius: var(--r-md);
   padding: var(--s-2) var(--s-3);
   font-family: var(--display);
-  font-size: var(--t-body-xl);
+  font-size: clamp(24px, 2.2vw, 36px);
   font-weight: 900;
   text-transform: uppercase;
-  cursor: var(--cursor-grab, grab);
-  user-select: none;
-  transition: transform 120ms var(--ease-out),
-              box-shadow 120ms var(--ease-out);
+  text-align: center;
+  line-height: 1.1;
+  color: var(--ink);
+  z-index: 2;
+  word-break: break-word;
+  transition: transform var(--d-fast) var(--ease-out),
+              box-shadow var(--d-fast) var(--ease-out);
 }
 
-.step-A6__etiquette.is-placed {
-  visibility: hidden;
+.step-A6__comp-card.is-connected {
+  background: var(--accent-3);
 }
 
-.step-A6__etiquette.is-dragging {
-  cursor: var(--cursor-grabbing, grabbing);
-  position: fixed;
-  pointer-events: none;
-  z-index: 100;
+.step-A6__comp-card.is-active {
+  transform: translate(-50%, -50%) rotate(0deg) scale(1.04);
   box-shadow: var(--shadow-lg);
-  transform: scale(1.08);
+  border-color: var(--accent-1);
 }
 
-.step-A6__etiquette.is-rejected {
-  animation: a6-shake 320ms ease-in-out;
+/* Dot sur le BORD de la card (data-side). x2 plus gros pour visibilite. */
+.step-A6__comp-card-dot {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent-1);
+  border: 5px solid var(--ink);
+  cursor: var(--cursor-pointer);
+  z-index: 3;
+  transform: translate(-50%, -50%);
 }
 
-@keyframes a6-shake {
-  0%, 100% { transform: translateX(0); }
-  25%      { transform: translateX(-8px); }
-  75%      { transform: translateX(8px); }
+.step-A6__comp-card-dot[data-side="right"]  { top: 50%; left: 100%; }
+.step-A6__comp-card-dot[data-side="left"]   { top: 50%; left: 0; }
+.step-A6__comp-card-dot[data-side="top"]    { top: 0;   left: 50%; }
+.step-A6__comp-card-dot[data-side="bottom"] { top: 100%; left: 50%; }
+
+/* Pulse box-shadow only pour ne pas casser le transform de positionnement */
+.step-A6__comp-card-dot.is-pulsing {
+  animation: a6-dot-pulse 1.6s ease-in-out infinite;
 }
 
-/* Slide 3 : entrees / sorties ------------------------------------------ */
+@keyframes a6-dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-1) 70%, transparent); }
+  50%      { box-shadow: 0 0 0 14px transparent; }
+}
 
-.step-A6__cols {
+/* ----- Zone carte centrale ------------------------------------------------ */
+
+.step-A6__carte-wrap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(600px, 70vw, 1100px);
+  aspect-ratio: 4 / 3;
+  z-index: 1;
+}
+
+.step-A6__carte-wrap.is-shaking {
+  animation: a6-carte-shake 360ms ease-in-out;
+}
+
+/* IMPORTANT : conserver le translate(-50%,-50%) du wrap dans chaque keyframe.
+   Sans ca, l'animation overrirait le transform de centrage et la carte
+   sauterait en bas-droite (origine top-left au point central) avant de shake. */
+@keyframes a6-carte-shake {
+  0%, 100% { transform: translate(-50%, -50%) translateX(0); }
+  20%      { transform: translate(-50%, -50%) translateX(-12px); }
+  40%      { transform: translate(-50%, -50%) translateX(12px); }
+  60%      { transform: translate(-50%, -50%) translateX(-9px); }
+  80%      { transform: translate(-50%, -50%) translateX(7px); }
+}
+
+.step-A6__carte-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
+.step-A6__lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 4; /* au-dessus de la carte (z:1), slots (z:2), cards (z:2), dots (z:3) */
+}
+
+.step-A6__line {
+  stroke: var(--accent-4); /* rose Wubo */
+  stroke-width: 5;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.step-A6__line--dragging {
+  stroke: var(--accent-4); /* rose aussi, dashed pour distinguer du fixe */
+  stroke-dasharray: 8 8;
+}
+
+.step-A6__slot {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 5px solid var(--accent-3); /* bordure jaune Wubo */
+  transform: translate(-50%, -50%);
+  cursor: var(--cursor-pointer);
+  z-index: 2;
+  transition: transform var(--d-fast) var(--ease-bounce),
+              background var(--d-fast) var(--ease-out);
+  animation: a6-slot-pulse 2s ease-in-out infinite;
+}
+
+/* Halo rose Wubo (--accent-4) qui pulse pour signaler les points clicables */
+@keyframes a6-slot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-4) 80%, transparent); }
+  50%      { box-shadow: 0 0 0 20px transparent; }
+}
+
+.step-A6__slot.is-hover {
+  background: var(--accent-3);
+  transform: translate(-50%, -50%) scale(1.3);
+}
+
+.step-A6__slot.is-connected {
+  background: var(--accent-3);
+  animation: none;
+}
+
+/* ----- Slide 3 : entrees / sorties + pool --------------------------------- */
+
+.step-A6__sort {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--s-3);
-  width: min(1200px, 90vw);
+  grid-template-rows: 1fr auto;
+  gap: var(--s-4);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.step-A6__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-4);
+  min-height: 0;
+  height: 100%;
 }
 
 .step-A6__col {
   background: var(--paper);
   border: var(--border);
-  box-shadow: var(--shadow);
-  border-radius: var(--r-md);
-  padding: var(--s-3);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--r-lg);
+  padding: var(--s-3) var(--s-4);
   display: grid;
-  gap: var(--s-2);
-  min-height: 280px;
+  grid-template-rows: auto 1fr;
+  gap: var(--s-3);
+  min-height: 0;
 }
 
-.step-A6__col-titre {
+.step-A6__col.is-shaking {
+  animation: a6-col-shake 360ms ease-in-out;
+}
+
+@keyframes a6-col-shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-10px); }
+  40%      { transform: translateX(10px); }
+  60%      { transform: translateX(-8px); }
+  80%      { transform: translateX(6px); }
+}
+
+.step-A6__col-title {
   font-family: var(--display);
-  font-size: var(--t-h2);
+  font-size: clamp(48px, 4.6vw, 72px);
   font-weight: 900;
   text-transform: uppercase;
   text-align: center;
@@ -264,58 +322,106 @@ const STYLES = `
   letter-spacing: -0.01em;
 }
 
-.step-A6__col-sub {
-  font-family: var(--mono);
-  font-size: var(--t-small);
-  text-align: center;
-  letter-spacing: 0.08em;
-  opacity: 0.55;
-}
+.step-A6__col--entree .step-A6__col-title { color: var(--accent-2); }
+.step-A6__col--sortie .step-A6__col-title { color: var(--accent-4); }
 
-.step-A6__cards {
+.step-A6__col-zone {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s-1);
-  justify-content: center;
-  align-content: flex-start;
-}
-
-.step-A6__card {
-  background: var(--accent-3);
-  color: var(--ink);
-  border: var(--border-thin);
-  border-radius: var(--r-sm);
-  padding: 8px 12px;
-  font-family: var(--display);
-  font-size: var(--t-body);
-  font-weight: 700;
-  text-transform: lowercase;
-}
-
-.step-A6__card--custom::after {
-  content: ' *';
-  color: var(--accent-1);
-}
-
-.step-A6__add {
-  display: grid;
-  grid-template-columns: 1fr auto;
   gap: var(--s-2);
-  width: min(540px, 60vw);
-  margin: 0 auto;
+  align-content: flex-start;
+  justify-content: center;
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  min-height: 0;
+  height: 100%;
+  pointer-events: none; /* la col entiere capte les events, pas seulement la zone */
+}
+
+.step-A6__col-zone > * { pointer-events: auto; } /* mais les cards dedans restent draggables */
+
+.step-A6__col.is-hover {
+  background: color-mix(in srgb, var(--accent-1) 14%, transparent);
+}
+
+.step-A6__pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  justify-content: center;
+  align-items: center;
+  padding: var(--s-3);
+  background: var(--bg-2);
+  border: var(--border-thin);
+  border-radius: var(--r-md);
+  min-height: 120px;
+}
+
+.step-A6__drag-card {
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  border-radius: var(--r-md);
+  padding: 14px var(--s-3);
+  font-family: var(--display);
+  font-size: clamp(28px, 2.4vw, 40px);
+  font-weight: 900;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ink);
+  cursor: var(--cursor-grab);
+  user-select: none;
+  transition: transform var(--d-fast) var(--ease-out),
+              box-shadow var(--d-fast) var(--ease-out);
+}
+
+.step-A6__drag-card:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.step-A6__drag-card.is-dragging {
+  opacity: 0.4;
+  cursor: var(--cursor-grabbing);
+}
+
+.step-A6__drag-card--placed {
+  background: var(--accent-3);
+}
+
+.step-A6__drag-card.is-rejecting {
+  animation: a6-card-reject 320ms ease-in-out;
+}
+
+@keyframes a6-card-reject {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-6px); }
+  75%      { transform: translateX(6px); }
+}
+
+/* ----- CTA bottom : identique a A1/A3 (var(--s-8) padding-bottom du wrap) */
+
+.step-A6__cta-area {
+  display: grid;
+  justify-items: center;
+  margin-top: var(--s-3);
+}
+
+.step-A6__cta {
+  animation: none !important;
 }
 `;
 
 let scene = null;
+let stableHandlers = [];   // handlers globaux (CTA, keydown) survivent au switch slide
 let domNodes = [];
-let handlers = [];
 let timers = [];
-let tickerFns = [];
 let navAPIRef = null;
+let slideAbort = null;     // AbortController du slide courant (nettoye au switch)
 
 let slide = 1;
-let placedZones = {};   // { [zoneIdx: number]: composantId }
-let customCards = [];   // Array<{name, column}>
+let connections = [];      // array d'ids composants connectes (slide 2)
+let classifications = {};  // { itemId: 'entree'|'sortie' } (slide 3)
 
 function ensureStyle() {
   if (document.getElementById(STYLE_ID)) return;
@@ -331,14 +437,18 @@ function removeStyle() {
 }
 
 function persist() {
-  saveStepState('A6', { slide, placedZones: { ...placedZones }, customCards: [...customCards] });
+  saveStepState('A6', { slide, connections: [...connections], classifications: { ...classifications } });
+}
+
+function rotJitter() {
+  return (Math.random() * 6 - 3).toFixed(2); // -3deg .. +3deg
 }
 
 export default {
   id: 'A6',
   phase: 'A',
   title: 'Identification composants',
-  estimatedDuration: 240,
+  estimatedDuration: 180,
   isCollective: true,
   requiresAnimator: true,
   fullscreen: false,
@@ -352,16 +462,15 @@ export default {
 
     const restored = savedState || getStepState('A6') || {};
     slide = Math.max(1, Math.min(3, restored.slide || 1));
-    placedZones = { ...(restored.placedZones || {}) };
-    customCards = Array.isArray(restored.customCards) ? [...restored.customCards] : [];
+    connections = Array.isArray(restored.connections) ? [...restored.connections] : [];
+    classifications = (restored.classifications && typeof restored.classifications === 'object')
+      ? { ...restored.classifications } : {};
 
     const stage = document.querySelector('#stage');
     const wrap = document.createElement('div');
     wrap.className = 'step-A6';
 
-    const top = document.createElement('div');
-    top.className = 'step-A6__top';
-
+    // Progress
     const progressWrap = document.createElement('div');
     progressWrap.className = 'step-A6__progress-wrap';
     const progress = document.createElement('div');
@@ -377,407 +486,448 @@ export default {
     const progressLabel = document.createElement('div');
     progressLabel.className = 'step-A6__progress-label';
     progressWrap.appendChild(progressLabel);
-    top.appendChild(progressWrap);
+    wrap.appendChild(progressWrap);
 
-    wrap.appendChild(top);
+    // Title
+    const title = document.createElement('h1');
+    title.className = 'step-A6__title';
+    wrap.appendChild(title);
 
-    const consigne = document.createElement('h2');
-    consigne.className = 'step-A6__consigne';
-    wrap.appendChild(consigne);
-
+    // Main (zone changeante par slide)
     const main = document.createElement('div');
     main.className = 'step-A6__main';
     wrap.appendChild(main);
 
-    // Compteur (slide 2)
-    const counter = document.createElement('div');
-    counter.className = 'compteur-geant step-A6__counter';
-    const counterValue = document.createElement('div');
-    counterValue.className = 'compteur-geant__value';
-    counter.appendChild(counterValue);
-    const counterLabel = document.createElement('div');
-    counterLabel.className = 'compteur-geant__label';
-    counterLabel.textContent = 'places';
-    counter.appendChild(counterLabel);
-    wrap.appendChild(counter);
-
-    const bottom = document.createElement('div');
-    bottom.style.display = 'grid';
-    bottom.style.justifyItems = 'center';
-    bottom.style.gap = 'var(--s-2)';
+    // CTA
+    const ctaArea = document.createElement('div');
+    ctaArea.className = 'step-A6__cta-area';
     const cta = document.createElement('button');
-    cta.className = 'cta-primary';
+    cta.className = 'cta-primary step-A6__cta';
     cta.type = 'button';
-    bottom.appendChild(cta);
-    wrap.appendChild(bottom);
-
-    const tuko = document.createElement('div');
-    tuko.className = 'tuko-mascotte';
-    tuko.setAttribute('data-pose', 'pedagogique');
-    tuko.setAttribute('data-position', 'bas-gauche');
-    wrap.appendChild(tuko);
+    ctaArea.appendChild(cta);
+    wrap.appendChild(ctaArea);
 
     stage.appendChild(wrap);
     domNodes.push(wrap);
 
-    // Sub-renderers --------------------------------------------------------
-
     function refreshProgress() {
       segs.forEach((seg, i) => {
         seg.classList.remove('is-current', 'is-done');
-        if (i + 1 < slide) seg.classList.add('is-done');
-        else if (i + 1 === slide) seg.classList.add('is-current');
+        if (i < slide - 1) seg.classList.add('is-done');
+        else if (i === slide - 1) seg.classList.add('is-current');
       });
-      progressLabel.textContent = `identification . ${slide} sur 3`;
+      progressLabel.textContent = `identification · ${slide} sur 3`;
     }
 
-    function renderSlide1() {
-      consigne.textContent = 'ouvre ta boite et trouve ces 5 composants';
-      counter.style.display = 'none';
-      main.replaceChildren();
-
-      const galerie = document.createElement('div');
-      galerie.className = 'step-A6__galerie';
-      COMPOSANTS.forEach(c => {
-        const ph = document.createElement('div');
-        ph.className = 'step-A6__placeholder';
-        const img = document.createElement('div');
-        img.className = 'step-A6__placeholder-img';
-        img.textContent = '[ illu ]';
-        ph.appendChild(img);
-        const lbl = document.createElement('div');
-        lbl.className = 'step-A6__placeholder-label';
-        lbl.textContent = c.label;
-        ph.appendChild(lbl);
-        galerie.appendChild(ph);
-      });
-      main.appendChild(galerie);
-
-      const note = document.createElement('div');
-      note.className = 'step-A6__mag-note';
-      note.textContent = 'magazine page 10 . relie chaque nom au composant';
-      main.appendChild(note);
-
-      cta.textContent = '> TOUT LE MONDE A FINI ?';
-      cta.classList.remove('is-disabled');
+    // ====================================================================
+    // SLIDE 1 : affichage statique. Cards en absolute autour de la carte.
+    // ====================================================================
+    function renderSlide1(signal) {
+      title.textContent = 'voici les 5 composants à découvrir';
+      cta.textContent = 'ON CONTINUE';
       cta.disabled = false;
-    }
-
-    function renderSlide2() {
-      consigne.textContent = 'glisse chaque nom au bon endroit';
-      counter.style.display = '';
       main.replaceChildren();
 
-      const carte = document.createElement('div');
-      carte.className = 'step-A6__carte';
-      const zones = [];
-      COMPOSANTS.forEach((c, i) => {
-        const zone = document.createElement('div');
-        zone.className = 'step-A6__zone';
-        zone.dataset.idx = String(i);
-        zone.dataset.expectedId = c.id;
-        if (placedZones[i] === c.id) {
-          zone.classList.add('is-correct');
-          zone.textContent = c.label;
-        } else {
-          zone.textContent = `zone ${i + 1}`;
-        }
-        carte.appendChild(zone);
-        zones.push(zone);
+      const layout = document.createElement('div');
+      layout.className = 'step-A6__layout';
+
+      const carteWrap = document.createElement('div');
+      carteWrap.className = 'step-A6__carte-wrap';
+      const carteImg = document.createElement('img');
+      carteImg.className = 'step-A6__carte-img';
+      carteImg.src = 'assets/sprites/A6/illu_carte_electronique.png';
+      carteImg.alt = 'carte électronique Argibi';
+      carteWrap.appendChild(carteImg);
+      layout.appendChild(carteWrap);
+
+      COMPOSANTS.forEach((c) => {
+        const pos = CARD_POSITIONS[c.id] || { x: 0.5, y: 0.5 };
+        const card = document.createElement('div');
+        card.className = 'step-A6__comp-card';
+        card.style.setProperty('--rot', `${rotJitter()}deg`);
+        card.style.left = `${pos.x * 100}%`;
+        card.style.top = `${pos.y * 100}%`;
+        card.textContent = c.label;
+        layout.appendChild(card);
       });
-      main.appendChild(carte);
 
-      const etiquettes = document.createElement('div');
-      etiquettes.className = 'step-A6__etiquettes';
-      COMPOSANTS.forEach(c => {
-        const et = document.createElement('div');
-        et.className = 'step-A6__etiquette';
-        et.dataset.id = c.id;
-        et.textContent = c.label;
-        if (Object.values(placedZones).includes(c.id)) {
-          et.classList.add('is-placed');
-        }
-        etiquettes.appendChild(et);
-        attachDrag(et, zones);
+      main.appendChild(layout);
+    }
+
+    // ====================================================================
+    // SLIDE 2 : tirer les lignes
+    // ====================================================================
+    function renderSlide2(signal) {
+      title.textContent = 'tire une ligne entre chaque mot et son emplacement';
+      cta.textContent = 'ON CONTINUE';
+      cta.disabled = false;
+      main.replaceChildren();
+
+      const layout = document.createElement('div');
+      layout.className = 'step-A6__layout';
+
+      const carteWrap = document.createElement('div');
+      carteWrap.className = 'step-A6__carte-wrap';
+      const carteImg = document.createElement('img');
+      carteImg.className = 'step-A6__carte-img';
+      carteImg.src = 'assets/sprites/A6/illu_carte_electronique.png';
+      carteImg.alt = 'carte électronique Argibi';
+      carteWrap.appendChild(carteImg);
+
+      // SVG overlay sur TOUT le layout pour relier cards (en absolute autour)
+      // aux slots (sur la carte).
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'step-A6__lines');
+      svg.setAttribute('preserveAspectRatio', 'none');
+      layout.appendChild(svg);
+
+      // Slots sur la carte (coords COMPOSANTS x/y relatifs a carteWrap)
+      const slots = {};
+      COMPOSANTS.forEach((c) => {
+        const slot = document.createElement('div');
+        slot.className = 'step-A6__slot';
+        slot.dataset.id = c.id;
+        slot.style.left = `${c.x * 100}%`;
+        slot.style.top = `${c.y * 100}%`;
+        if (connections.includes(c.id)) slot.classList.add('is-connected');
+        carteWrap.appendChild(slot);
+        slots[c.id] = slot;
       });
-      main.appendChild(etiquettes);
 
-      function refreshCounter() {
-        const n = Object.keys(placedZones).length;
-        counterValue.textContent = `${n}/5`;
-        counterValue.classList.add('is-pulsing');
-        const t = setTimeout(() => counterValue.classList.remove('is-pulsing'), 200);
-        timers.push(t);
+      layout.appendChild(carteWrap);
 
-        const ok = n === 5;
-        cta.textContent = '> ON CONTINUE';
-        cta.classList.toggle('is-disabled', !ok);
-        cta.disabled = !ok;
-        cta.style.visibility = ok ? 'visible' : 'hidden';
+      // Cards en absolute selon CARD_POSITIONS (relatif au layout)
+      const cards = {};
+      COMPOSANTS.forEach((c) => {
+        const pos = CARD_POSITIONS[c.id] || { x: 0.5, y: 0.5, dotSide: 'right' };
+        const card = document.createElement('div');
+        card.className = 'step-A6__comp-card';
+        card.dataset.id = c.id;
+        card.style.setProperty('--rot', `${rotJitter()}deg`);
+        card.style.left = `${pos.x * 100}%`;
+        card.style.top = `${pos.y * 100}%`;
+        card.textContent = c.label;
+        if (connections.includes(c.id)) card.classList.add('is-connected');
 
-        if (ok) {
-          // reward
-          if (carte.isConnected) spawnConfettis(carte, { nombre: 14 });
-          if (carte.isConnected) spawnShockwave(carte, { rayonMax: 800, duree: 700 });
-        }
-      }
+        const dot = document.createElement('div');
+        dot.className = 'step-A6__comp-card-dot';
+        dot.dataset.side = pos.dotSide || 'right';
+        if (!connections.includes(c.id)) dot.classList.add('is-pulsing');
+        card.appendChild(dot);
 
-      function attachDrag(el, zonesList) {
-        const onPointerDown = (e) => {
-          if (el.classList.contains('is-placed')) return;
-          e.preventDefault();
-          const rect = el.getBoundingClientRect();
-          const offX = e.clientX - rect.left;
-          const offY = e.clientY - rect.top;
-          el.classList.add('is-dragging');
-          el.style.left = `${rect.left}px`;
-          el.style.top = `${rect.top}px`;
-          el.style.width = `${rect.width}px`;
+        layout.appendChild(card);
+        cards[c.id] = card;
+      });
 
-          let hover = null;
-          const onMove = (ev) => {
-            el.style.left = `${ev.clientX - offX}px`;
-            el.style.top = `${ev.clientY - offY}px`;
-            // detecter survol zone
-            zonesList.forEach(z => z.classList.remove('is-hover'));
-            hover = null;
-            for (const z of zonesList) {
-              if (z.classList.contains('is-correct')) continue;
-              const r = z.getBoundingClientRect();
-              if (ev.clientX >= r.left && ev.clientX <= r.right &&
-                  ev.clientY >= r.top && ev.clientY <= r.bottom) {
-                z.classList.add('is-hover');
-                hover = z;
-                break;
-              }
-            }
-          };
-          const onUp = () => {
-            window.removeEventListener('pointermove', onMove);
-            window.removeEventListener('pointerup', onUp);
-            zonesList.forEach(z => z.classList.remove('is-hover'));
-            el.classList.remove('is-dragging');
-            el.style.left = '';
-            el.style.top = '';
-            el.style.width = '';
+      main.appendChild(layout);
 
-            if (hover) {
-              const idx = parseInt(hover.dataset.idx, 10);
-              const expected = hover.dataset.expectedId;
-              const dragged = el.dataset.id;
-              if (expected === dragged) {
-                placedZones[idx] = dragged;
-                hover.classList.add('is-correct');
-                hover.textContent = COMPOSANTS.find(c => c.id === dragged).label;
-                el.classList.add('is-placed');
-                persist();
-                refreshCounter();
-              } else {
-                el.classList.add('is-rejected');
-                const t = setTimeout(() => el.classList.remove('is-rejected'), 320);
-                timers.push(t);
-              }
-            }
-          };
-          window.addEventListener('pointermove', onMove);
-          window.addEventListener('pointerup', onUp);
+      // Drag logique : coords toutes relatives au LAYOUT (svg layout-wide).
+      let dragging = null;
+
+      function relCoords(evt) {
+        const r = layout.getBoundingClientRect();
+        return {
+          x: ((evt.clientX - r.left) / r.width) * 100,
+          y: ((evt.clientY - r.top) / r.height) * 100,
         };
-        el.addEventListener('pointerdown', onPointerDown);
-        handlers.push([el, 'pointerdown', onPointerDown]);
       }
 
-      refreshCounter();
+      function elCenterRel(el) {
+        const lr = layout.getBoundingClientRect();
+        const er = el.getBoundingClientRect();
+        return {
+          x: ((er.left + er.width / 2) - lr.left) / lr.width * 100,
+          y: ((er.top + er.height / 2) - lr.top) / lr.height * 100,
+        };
+      }
+
+      function drawFixedLines() {
+        svg.querySelectorAll('.step-A6__line:not(.step-A6__line--dragging)').forEach(l => l.remove());
+        connections.forEach((compId) => {
+          const card = cards[compId];
+          const slot = slots[compId];
+          if (!card || !slot) return;
+          const a = elCenterRel(card.querySelector('.step-A6__comp-card-dot'));
+          const b = elCenterRel(slot);
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('class', 'step-A6__line');
+          line.setAttribute('x1', `${a.x}%`);
+          line.setAttribute('y1', `${a.y}%`);
+          line.setAttribute('x2', `${b.x}%`);
+          line.setAttribute('y2', `${b.y}%`);
+          svg.appendChild(line);
+        });
+      }
+
+      const onMouseMove = (evt) => {
+        if (!dragging) return;
+        const c = relCoords(evt);
+        dragging.lineEl.setAttribute('x2', `${c.x}%`);
+        dragging.lineEl.setAttribute('y2', `${c.y}%`);
+      };
+
+      const onMouseUp = (evt) => {
+        if (!dragging) return;
+        const t = evt.target;
+        const slotEl = t.classList?.contains('step-A6__slot') ? t : null;
+        const matchedId = slotEl?.dataset.id;
+
+        if (matchedId === dragging.compId) {
+          connections.push(dragging.compId);
+          slots[matchedId].classList.add('is-connected');
+          cards[dragging.compId].classList.add('is-connected');
+          cards[dragging.compId].querySelector('.step-A6__comp-card-dot').classList.remove('is-pulsing');
+          dragging.lineEl.classList.remove('step-A6__line--dragging');
+          spawnConfettis(carteWrap, { nombre: 6 });
+          persist();
+        } else {
+          dragging.lineEl.remove();
+          carteWrap.classList.add('is-shaking');
+          const t1 = setTimeout(() => carteWrap.classList.remove('is-shaking'), 400);
+          timers.push(t1);
+        }
+        dragging = null;
+      };
+
+      window.addEventListener('mousemove', onMouseMove, { signal });
+      window.addEventListener('mouseup', onMouseUp, { signal });
+
+      COMPOSANTS.forEach((c) => {
+        const dot = cards[c.id].querySelector('.step-A6__comp-card-dot');
+        const onMouseDown = (evt) => {
+          if (connections.includes(c.id)) return;
+          evt.preventDefault();
+          const a = elCenterRel(dot);
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('class', 'step-A6__line step-A6__line--dragging');
+          line.setAttribute('x1', `${a.x}%`);
+          line.setAttribute('y1', `${a.y}%`);
+          line.setAttribute('x2', `${a.x}%`);
+          line.setAttribute('y2', `${a.y}%`);
+          svg.appendChild(line);
+          dragging = { compId: c.id, lineEl: line };
+        };
+        dot.addEventListener('mousedown', onMouseDown, { signal });
+      });
+
+      Object.values(slots).forEach((slot) => {
+        slot.addEventListener('mouseenter', () => slot.classList.add('is-hover'), { signal });
+        slot.addEventListener('mouseleave', () => slot.classList.remove('is-hover'), { signal });
+      });
+
+      requestAnimationFrame(drawFixedLines);
+      const onResize = () => drawFixedLines();
+      window.addEventListener('resize', onResize, { signal });
     }
 
-    function renderSlide3() {
-      consigne.textContent = 'un objet electronique a des entrees et sorties';
-      counter.style.display = 'none';
+    // ====================================================================
+    // SLIDE 3 : drag & drop entrees/sorties
+    // ====================================================================
+    function renderSlide3(signal) {
+      title.textContent = 'glisse chaque objet dans la bonne colonne';
+      cta.textContent = 'ON DÉMARRE LE MONTAGE';
+      cta.disabled = false;
       main.replaceChildren();
+
+      const sort = document.createElement('div');
+      sort.className = 'step-A6__sort';
 
       const cols = document.createElement('div');
-      cols.className = 'step-A6__cols';
+      cols.className = 'step-A6__columns';
 
-      const colDefs = [
-        { key: 'entree', titre: 'entree', sub: 'tu lui donnes une info' },
-        { key: 'cerveau', titre: 'cerveau', sub: 'il pilote le tout' },
-        { key: 'sortie', titre: 'sortie', sub: 'il te montre quelque chose' },
-      ];
+      const colEntree = document.createElement('div');
+      colEntree.className = 'step-A6__col step-A6__col--entree';
+      colEntree.dataset.col = 'entree';
+      const titleEntree = document.createElement('h2');
+      titleEntree.className = 'step-A6__col-title';
+      titleEntree.textContent = 'ENTRÉE';
+      colEntree.appendChild(titleEntree);
+      const zoneEntree = document.createElement('div');
+      zoneEntree.className = 'step-A6__col-zone';
+      zoneEntree.dataset.col = 'entree';
+      colEntree.appendChild(zoneEntree);
 
-      colDefs.forEach(def => {
-        const col = document.createElement('div');
-        col.className = 'step-A6__col';
-        col.dataset.col = def.key;
+      const colSortie = document.createElement('div');
+      colSortie.className = 'step-A6__col step-A6__col--sortie';
+      colSortie.dataset.col = 'sortie';
+      const titleSortie = document.createElement('h2');
+      titleSortie.className = 'step-A6__col-title';
+      titleSortie.textContent = 'SORTIE';
+      colSortie.appendChild(titleSortie);
+      const zoneSortie = document.createElement('div');
+      zoneSortie.className = 'step-A6__col-zone';
+      zoneSortie.dataset.col = 'sortie';
+      colSortie.appendChild(zoneSortie);
 
-        const t = document.createElement('h3');
-        t.className = 'step-A6__col-titre';
-        t.textContent = def.titre;
-        col.appendChild(t);
+      cols.appendChild(colEntree);
+      cols.appendChild(colSortie);
+      sort.appendChild(cols);
 
-        const sub = document.createElement('div');
-        sub.className = 'step-A6__col-sub';
-        sub.textContent = def.sub;
-        col.appendChild(sub);
+      const pool = document.createElement('div');
+      pool.className = 'step-A6__pool';
+      sort.appendChild(pool);
 
-        const cards = document.createElement('div');
-        cards.className = 'step-A6__cards';
-        cards.dataset.col = def.key;
-        col.appendChild(cards);
+      main.appendChild(sort);
 
-        cols.appendChild(col);
+      // Map id -> item pour valider au drop
+      const itemMap = {};
+      ALL_ITEMS.forEach((it) => { itemMap[it.id] = it; });
+
+      function makeCard(item) {
+        const card = document.createElement('div');
+        card.className = 'step-A6__drag-card';
+        card.draggable = true;
+        card.dataset.id = item.id;
+        card.dataset.type = item.type;
+        card.textContent = item.label;
+
+        card.addEventListener('dragstart', (e) => {
+          card.classList.add('is-dragging');
+          e.dataTransfer.setData('text/plain', item.id);
+          e.dataTransfer.effectAllowed = 'move';
+        }, { signal });
+
+        card.addEventListener('dragend', () => {
+          card.classList.remove('is-dragging');
+        }, { signal });
+
+        return card;
+      }
+
+      function placeCardIn(card, container) {
+        const isInColumn = container === zoneEntree || container === zoneSortie;
+        card.classList.toggle('step-A6__drag-card--placed', isInColumn);
+        container.appendChild(card);
+      }
+
+      // Distribution initiale depuis classifications restaurees
+      ALL_ITEMS.forEach((item) => {
+        const card = makeCard(item);
+        const col = classifications[item.id];
+        if (col === 'entree') placeCardIn(card, zoneEntree);
+        else if (col === 'sortie') placeCardIn(card, zoneSortie);
+        else placeCardIn(card, pool);
       });
 
-      main.appendChild(cols);
-
-      function placeCards() {
-        cols.querySelectorAll('.step-A6__cards').forEach(c => c.replaceChildren());
-        // composants pre-classes
-        COMPOSANTS.forEach(c => {
-          const card = document.createElement('div');
-          card.className = 'step-A6__card';
-          card.textContent = c.label;
-          const target = cols.querySelector(`.step-A6__cards[data-col="${c.col}"]`);
-          if (target) target.appendChild(card);
-        });
-        // custom cards
-        customCards.forEach(cc => {
-          const card = document.createElement('div');
-          card.className = 'step-A6__card step-A6__card--custom';
-          card.textContent = cc.name;
-          const target = cols.querySelector(`.step-A6__cards[data-col="${cc.column}"]`);
-          if (target) target.appendChild(card);
-        });
-      }
-      placeCards();
-
-      // Add input
-      const addWrap = document.createElement('div');
-      addWrap.className = 'step-A6__add';
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'input-mega';
-      input.placeholder = 'tape un objet + Entree';
-      input.maxLength = 24;
-      input.autocomplete = 'off';
-      input.spellcheck = false;
-      addWrap.appendChild(input);
-      const addBtn = document.createElement('button');
-      addBtn.className = 'cta-secondary';
-      addBtn.type = 'button';
-      addBtn.textContent = '+ AJOUTE';
-      addWrap.appendChild(addBtn);
-      main.appendChild(addWrap);
-
-      function addCard() {
-        const name = input.value.trim();
-        if (!name) return;
-        // colonne par defaut : entree (l'animateur peut deplacer plus tard si besoin)
-        customCards.push({ name, column: 'entree' });
-        input.value = '';
-        persist();
-        placeCards();
-      }
-      const onAddClick = () => addCard();
-      const onAddKey = (e) => {
-        if (e.key === 'Enter') {
+      // dropTarget = element qui capte dragover/drop (toute la col)
+      // appendTarget = ou on append les cards reussies (zone interne)
+      function setupDropZone(dropTarget, appendTarget, colName) {
+        dropTarget.addEventListener('dragover', (e) => {
           e.preventDefault();
-          addCard();
-        }
-      };
-      addBtn.addEventListener('click', onAddClick);
-      input.addEventListener('keydown', onAddKey);
-      handlers.push([addBtn, 'click', onAddClick]);
-      handlers.push([input, 'keydown', onAddKey]);
+          e.dataTransfer.dropEffect = 'move';
+          dropTarget.classList.add('is-hover');
+        }, { signal });
 
-      cta.textContent = '> ON DEMARRE LE MONTAGE';
-      cta.classList.remove('is-disabled');
-      cta.disabled = false;
+        dropTarget.addEventListener('dragleave', (e) => {
+          // dragleave fire aussi sur passages internes ; on retire le hover
+          // seulement si on quitte vraiment le dropTarget
+          if (!dropTarget.contains(e.relatedTarget)) {
+            dropTarget.classList.remove('is-hover');
+          }
+        }, { signal });
+
+        dropTarget.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dropTarget.classList.remove('is-hover');
+          const id = e.dataTransfer.getData('text/plain');
+          const card = main.querySelector(`.step-A6__drag-card[data-id="${id}"]`);
+          if (!card) return;
+          const item = itemMap[id];
+          if (!item) return;
+
+          if (colName === null) {
+            placeCardIn(card, pool);
+            delete classifications[id];
+            persist();
+            return;
+          }
+
+          if (item.type === colName) {
+            placeCardIn(card, appendTarget);
+            classifications[id] = colName;
+            spawnConfettis(appendTarget, { nombre: 4 });
+            persist();
+          } else {
+            // mauvaise colonne : shake col + retour pool
+            dropTarget.classList.add('is-shaking');
+            const t1 = setTimeout(() => dropTarget.classList.remove('is-shaking'), 400);
+            timers.push(t1);
+            card.classList.add('is-rejecting');
+            const t2 = setTimeout(() => card.classList.remove('is-rejecting'), 350);
+            timers.push(t2);
+            placeCardIn(card, pool);
+            delete classifications[id];
+            persist();
+          }
+        }, { signal });
+      }
+
+      // Drop zones = colonnes entieres (toute la card est receptive)
+      setupDropZone(colEntree, zoneEntree, 'entree');
+      setupDropZone(colSortie, zoneSortie, 'sortie');
+      setupDropZone(pool, pool, null);
     }
 
-    function renderSlide() {
-      refreshProgress();
-      if (slide === 1) renderSlide1();
-      else if (slide === 2) renderSlide2();
-      else renderSlide3();
-    }
-
-    function gotoSlide(n) {
-      timers.forEach(clearTimeout);
-      timers = [];
+    // ====================================================================
+    // Switch slide : abort previous + render new
+    // ====================================================================
+    function switchSlide(n) {
+      if (slideAbort) slideAbort.abort();
+      slideAbort = new AbortController();
       slide = Math.max(1, Math.min(3, n));
       persist();
-      renderSlide();
+      refreshProgress();
+      if (slide === 1) renderSlide1(slideAbort.signal);
+      else if (slide === 2) renderSlide2(slideAbort.signal);
+      else renderSlide3(slideAbort.signal);
     }
 
-    renderSlide();
+    // Init
+    slideAbort = new AbortController();
+    refreshProgress();
+    if (slide === 1) renderSlide1(slideAbort.signal);
+    else if (slide === 2) renderSlide2(slideAbort.signal);
+    else renderSlide3(slideAbort.signal);
 
+    // CTA et keydown : handlers globaux (stableHandlers, survivent au switch)
     const onCta = () => {
-      if (cta.disabled) return;
-      if (slide < 3) {
-        gotoSlide(slide + 1);
-      } else {
+      if (slide < 3) switchSlide(slide + 1);
+      else {
         if (navAPIRef) navAPIRef.markComplete();
         if (navAPIRef) navAPIRef.next();
       }
     };
     cta.addEventListener('click', onCta);
-    handlers.push([cta, 'click', onCta]);
+    stableHandlers.push([cta, 'click', onCta]);
 
-    // R = reset slide 2 (utilitaire animateur), bubble phase OK.
-    const onKeyR = (e) => {
+    const onKey = (e) => {
       const tag = (e.target?.tagName || '').toLowerCase();
       if (tag === 'input' || tag === 'textarea') return;
-      if (e.key === 'r' || e.key === 'R') {
-        if (slide === 2) {
-          placedZones = {};
-          persist();
-          renderSlide();
-        }
-      }
-    };
-    window.addEventListener('keydown', onKeyR);
-    handlers.push([window, 'keydown', onKeyR]);
-
-    // Intercepte ←/→/Espace en CAPTURE phase pour rerouter vers la nav
-    // intra-page (slides 1 -> 2 -> 3 via gotoSlide), au lieu de laisser nav.js
-    // sauter direct a la page suivante. Sur slide 3, seul le CTA passe a B1.
-    const onKeyNav = (e) => {
-      const tag = (e.target?.tagName || '').toLowerCase();
-      if (tag === 'input' || tag === 'textarea') return;
-
       if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'ArrowRight') {
-        if (slide < 3) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          gotoSlide(slide + 1);
-        } else {
-          // sur slide 3 : on bloque (CTA "ON DEMARRE LE MONTAGE" est le chemin canonique)
-          e.preventDefault();
-          e.stopImmediatePropagation();
-        }
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        onCta();
         return;
       }
       if (e.key === 'ArrowLeft' || e.key === 'Backspace') {
         if (slide > 1) {
           e.preventDefault();
           e.stopImmediatePropagation();
-          gotoSlide(slide - 1);
+          switchSlide(slide - 1);
         }
-        // sur slide 1 : on laisse passer pour reculer vers A5
-        return;
       }
     };
-    window.addEventListener('keydown', onKeyNav, true);
-    handlers.push([window, 'keydown', onKeyNav, true]);
+    window.addEventListener('keydown', onKey, true);
+    stableHandlers.push([window, 'keydown', onKey, true]);
   },
 
   exit() {
-    handlers.forEach(([t, e, f, capture]) => t.removeEventListener(e, f, !!capture));
-    handlers = [];
+    if (slideAbort) { try { slideAbort.abort(); } catch {} slideAbort = null; }
+    stableHandlers.forEach(([t, e, f, capture]) => t.removeEventListener(e, f, !!capture));
+    stableHandlers = [];
     timers.forEach(clearTimeout);
     timers = [];
-    tickerFns.forEach(fn => app.ticker.remove(fn));
-    tickerFns = [];
-    domNodes.forEach(n => n.remove());
+    domNodes.forEach((n) => n.remove());
     domNodes = [];
     if (scene) {
       scene.destroy({ children: true });
@@ -788,7 +938,7 @@ export default {
   },
 
   serialize() {
-    return { slide, placedZones: { ...placedZones }, customCards: [...customCards] };
+    return { slide, connections: [...connections], classifications: { ...classifications } };
   },
 
   isComplete() {

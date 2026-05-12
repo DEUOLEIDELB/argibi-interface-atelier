@@ -28,21 +28,25 @@ const CADENAS_LIT = new Set([
   56, 57, 58, 59, 60, 61, 62, 63,
 ]);
 
+// Fleche decalee d'une ligne vers le haut (rows 0-6) pour liberer la
+// row 7 = barre de progression integree. Toutes les valeurs precedentes
+// ont ete decalees de -8 (passage d'une ligne 8x8 a la precedente).
 const FLECHE_LIT = new Set([
-  // r1: pointe (col 3)
-  11,
-  // r2: pointe (col 3, 4)
-  19, 20,
-  // r3: tige (col 0..6)
-  24, 25, 26, 27, 28, 29, 30,
-  // r4: tige pleine (col 0..7)
-  32, 33, 34, 35, 36, 37, 38, 39,
-  // r5: tige (col 0..6)
-  40, 41, 42, 43, 44, 45, 46,
-  // r6: pointe (col 3, 4)
-  51, 52,
-  // r7: pointe (col 3)
-  59,
+  // r0: pointe haute (col 3)
+  3,
+  // r1: pointe (col 3, 4)
+  11, 12,
+  // r2: tige (col 0..6)
+  16, 17, 18, 19, 20, 21, 22,
+  // r3: tige pleine (col 0..7)
+  24, 25, 26, 27, 28, 29, 30, 31,
+  // r4: tige (col 0..6)
+  32, 33, 34, 35, 36, 37, 38,
+  // r5: pointe (col 3, 4)
+  43, 44,
+  // r6: pointe basse (col 3)
+  51,
+  // r7 : libre pour la barre de progression
 ]);
 
 const ECLAIR_LIT = new Set([
@@ -79,35 +83,45 @@ function injectStyle() {
 .step-C1__wrap {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto auto;
   align-items: center;
-  justify-content: flex-start;
-  padding: var(--s-2) var(--s-4) var(--s-2);
-  gap: var(--s-1);
+  justify-items: center;
+  padding: var(--s-3) var(--s-5) var(--s-8) var(--s-5);
+  gap: var(--s-2);
   text-align: center;
   overflow: hidden;
+  background: var(--bg);
 }
 .step-C1__titre {
-  font-size: var(--t-h1);
-  margin-top: var(--s-1);
+  font-family: var(--display);
+  font-size: clamp(56px, 5.4vw, 88px);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0;
   animation: step-C1-smash 600ms var(--ease-bounce) both;
 }
 .step-C1__sous {
-  font-size: var(--t-body-xl);
-  margin-top: 0;
+  font-family: var(--display);
+  font-size: clamp(24px, 2.2vw, 36px);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
   opacity: 0;
   animation: step-C1-fade-in var(--d-slow) var(--ease-out) 250ms forwards;
 }
 .step-C1__matrice {
-  --matrice-8x8-size: min(280px, 30vh);
+  --matrice-8x8-size: clamp(360px, 42vh, 520px);
 }
 .step-C1__demo-bar {
-  width: min(280px, 30vh);
+  width: clamp(360px, 42vh, 520px);
 }
 .step-C1__progression {
-  width: min(280px, 24vw);
-  margin-top: 0;
+  width: min(420px, 32vw);
+  margin: 0;
 }
 .step-C1__eyebrow {
   margin-top: 0;
@@ -117,6 +131,8 @@ function injectStyle() {
   place-items: center;
   gap: var(--s-2);
   position: relative;
+  justify-self: center;
+  align-self: center;
 }
 .step-C1__matrice {
   opacity: 0;
@@ -142,11 +158,13 @@ function injectStyle() {
 .step-C1__rappel,
 .step-C1__consigne {
   font-family: var(--display);
-  font-size: var(--t-body-xl);
-  font-weight: 600;
+  font-size: clamp(32px, 3vw, 48px);
+  font-weight: 700;
   color: var(--ink);
-  max-width: 720px;
-  line-height: 1.25;
+  max-width: 1100px;
+  line-height: 1.2;
+  margin: 0;
+  text-wrap: balance;
   opacity: 0;
   animation: step-C1-fade-in var(--d-slow) var(--ease-out) 700ms forwards;
 }
@@ -194,17 +212,17 @@ function injectStyle() {
   transition: left var(--d-fast) var(--ease-out);
 }
 .step-C1__cta-row {
-  display: flex;
-  gap: var(--s-3);
-  align-items: center;
-  margin-bottom: var(--s-2);
+  display: grid;
+  justify-items: center;
+  margin-top: var(--s-3);
 }
 .step-C1__cta {
+  animation: none !important;
   opacity: 0;
-  animation: step-C1-fade-in var(--d-slow) var(--ease-out) 850ms forwards;
+  animation: step-C1-fade-in var(--d-slow) var(--ease-out) 850ms forwards !important;
 }
 .step-C1__cta.is-blinking {
-  animation: step-C1-cta-blink 200ms steps(2, end) 2;
+  animation: step-C1-cta-blink 200ms steps(2, end) 2 !important;
 }
 
 @keyframes step-C1-smash {
@@ -331,32 +349,31 @@ function buildSlide1() {
   const eyebrow = el('span', 'eyebrow step-C1__eyebrow', 'controles · 1 sur 2');
   wrapEl.appendChild(eyebrow);
 
-  const titre = el('h1', 'titre-hero step-C1__titre', 'LE CADENAS');
+  const titre = el('h1', 'step-C1__titre', 'LE CADENAS');
   wrapEl.appendChild(titre);
 
-  const sous = el('p', 'sous-titre step-C1__sous', 'attends que je debloque');
-  wrapEl.appendChild(sous);
+  // Sous-titre retire sur demande Taki (inutile)
 
   const matriceZone = el('div', 'step-C1__matrice-zone');
   matriceEl = buildMatrice(CADENAS_LIT, 'is-on-rose', { cascade: true });
   matriceZone.appendChild(matriceEl);
   wrapEl.appendChild(matriceZone);
 
-  const rappel = el('p', 'step-C1__rappel',
-    'regarde ta capsule · si elle montre ce dessin, tu attends mon signal');
+  const rappel = el('p', 'step-C1__rappel');
+  rappel.appendChild(document.createTextNode('Regarde ta capsule Argibi.'));
+  rappel.appendChild(document.createElement('br'));
+  rappel.appendChild(document.createTextNode(
+    'Si elle montre ce dessin, tu attends mon signal.'));
   wrapEl.appendChild(rappel);
 
   const ctaRow = el('div', 'step-C1__cta-row');
   const cta = el('button', 'cta-primary step-C1__cta');
   cta.type = 'button';
-  cta.textContent = 'J\'AI COMPRIS';
+  cta.textContent = "J'AI COMPRIS";
   ctaRow.appendChild(cta);
   wrapEl.appendChild(ctaRow);
 
-  const tuko = el('div', 'tuko-mascotte');
-  tuko.dataset.pose = 'stop';
-  tuko.dataset.position = 'bas-gauche';
-  wrapEl.appendChild(tuko);
+  // Tuko placeholder retire (convention : pas de placeholder textuel sans sprite)
 
   const stage = document.querySelector('#stage');
   stage.appendChild(wrapEl);
@@ -418,40 +435,35 @@ function buildSlide2() {
   const eyebrow = el('span', 'eyebrow step-C1__eyebrow', 'controles · 2 sur 2');
   wrapEl.appendChild(eyebrow);
 
-  const titre = el('h1', 'titre-hero step-C1__titre', 'LA FLECHE');
+  const titre = el('h1', 'step-C1__titre', 'LA FLÈCHE');
   wrapEl.appendChild(titre);
 
-  const sous = el('p', 'sous-titre step-C1__sous', 'appuie longtemps pour demarrer');
-  wrapEl.appendChild(sous);
+  // Sous-titre retire sur demande Taki (inutile)
 
   const matriceZone = el('div', 'step-C1__matrice-zone');
   matriceEl = buildMatrice(FLECHE_LIT, 'is-on-cyan', { cascade: true });
   matriceZone.appendChild(matriceEl);
 
-  const demoBar = el('div', 'step-C1__demo-bar');
-  demoFillEl = el('div', 'step-C1__demo-bar__fill');
-  demoMiniTukoEl = el('div', 'step-C1__demo-bar__mini-tuko');
-  demoBar.appendChild(demoFillEl);
-  demoBar.appendChild(demoMiniTukoEl);
-  matriceZone.appendChild(demoBar);
+  // Pas de demo-bar separee : la barre de progression est integree
+  // directement dans la matrice (derniere ligne row 7) via runDemoCycle.
+  demoFillEl = null;
+  demoMiniTukoEl = null;
 
   wrapEl.appendChild(matriceZone);
 
-  const consigne = el('p', 'step-C1__consigne',
-    'reste appuye sur ton bouton jusqu\'a ce que la barre soit pleine');
+  const consigne = el('p', 'step-C1__consigne');
+  consigne.appendChild(document.createTextNode(
+    "Reste appuyé sur ton bouton jusqu'à ce que la barre soit pleine."));
   wrapEl.appendChild(consigne);
 
   const ctaRow = el('div', 'step-C1__cta-row');
   const cta = el('button', 'cta-primary step-C1__cta');
   cta.type = 'button';
-  cta.textContent = 'ON EST PRET';
+  cta.textContent = 'ON EST PRÊT';
   ctaRow.appendChild(cta);
   wrapEl.appendChild(ctaRow);
 
-  const tuko = el('div', 'tuko-mascotte');
-  tuko.dataset.pose = 'presentateur';
-  tuko.dataset.position = 'bas-gauche';
-  wrapEl.appendChild(tuko);
+  // Tuko placeholder retire (convention : pas de placeholder textuel sans sprite)
 
   const stage = document.querySelector('#stage');
   stage.appendChild(wrapEl);
@@ -488,14 +500,16 @@ function startDemoLoop() {
   intervals.push(iv);
 }
 
-function runDemoCycle() {
-  if (!demoFillEl || !matriceEl) return;
+// Indices de la derniere ligne (row 7) de la matrice 8x8 = barre integree.
+const PROGRESS_ROW = [56, 57, 58, 59, 60, 61, 62, 63];
 
-  // Reset
-  demoFillEl.parentElement.classList.add('is-resetting');
-  demoFillEl.style.transform = 'scaleX(0)';
-  if (demoMiniTukoEl) demoMiniTukoEl.style.left = '0';
+function runDemoCycle() {
+  if (!matriceEl || !pixelEls.length) return;
+
+  // Reset : fleche cyan dessinee, row 7 eteinte (re-init fleche).
   setMatricePattern(FLECHE_LIT, 'is-on-cyan');
+  // Si le pixel 59 (pointe basse de la fleche) est restau en cyan,
+  // les transitions de la row 7 le repasseront en jaune.
 
   // Phase 1 : pulse fleche (0 -> 0.5s).
   const t0 = setTimeout(() => {
@@ -503,27 +517,23 @@ function runDemoCycle() {
   }, 50);
   timers.push(t0);
 
-  // Phase 2 : remplissage barre (0.5s -> 2.5s).
-  const t1 = setTimeout(() => {
-    matriceEl.classList.remove('is-pulsing');
-    demoFillEl.parentElement.classList.remove('is-resetting');
-    demoFillEl.style.transform = 'scaleX(1)';
-    if (demoMiniTukoEl) demoMiniTukoEl.style.left = '100%';
-    play('tick');
-  }, 500);
-  timers.push(t1);
-
-  // Phase 3 : pleine charge -> GO flash (2.5s -> 3s).
-  const t2 = setTimeout(() => {
-    setMatricePattern(ECLAIR_LIT, 'is-on-jaune');
-    demoFillEl.parentElement.classList.add('is-flashing');
-    play('power-up');
-    const t3 = setTimeout(() => {
-      if (demoFillEl) demoFillEl.parentElement.classList.remove('is-flashing');
-    }, 400);
-    timers.push(t3);
-  }, 2500);
-  timers.push(t2);
+  // Phase 2 : remplissage progressif de la row 7 en jaune,
+  // un pixel toutes les ~250ms (2s pour 8 pixels).
+  PROGRESS_ROW.forEach((idx, i) => {
+    const t = setTimeout(() => {
+      if (!pixelEls[idx]) return;
+      const p = pixelEls[idx];
+      // On retire les anciennes couleurs (cyan de la fleche au pixel 59)
+      // et on allume en jaune.
+      p.classList.remove('is-on-cyan');
+      p.classList.add('is-on', 'is-on-jaune');
+      if (i === 0) {
+        matriceEl.classList.remove('is-pulsing');
+        play('tick');
+      }
+    }, 500 + i * 250);
+    timers.push(t);
+  });
 }
 
 function resetDemo() {

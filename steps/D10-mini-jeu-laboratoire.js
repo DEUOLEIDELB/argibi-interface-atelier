@@ -15,7 +15,6 @@
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';
 import { play } from '../core/audio.js';
-import { spawnEtincelles } from '../core/effects.js';
 
 const STYLE_ID = 'step-D10-styles';
 
@@ -143,13 +142,15 @@ const STYLE_TEXT = `
   margin: 0;
   padding: 0;
   display: flex;
-  flex-direction: column;
-  gap: var(--s-1);
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--s-2);
   overflow-y: auto;
   min-height: 0;
 }
 .step-D10__chip {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: var(--s-2);
   font-family: var(--display);
@@ -161,14 +162,18 @@ const STYLE_TEXT = `
   box-shadow: var(--shadow-sm);
   padding: 8px var(--s-2);
   border-radius: var(--r-sm);
-  transform: rotate(var(--rot, 0deg)) scale(0);
+  width: auto;
+  max-width: 100%;
+  align-self: flex-start;
+  opacity: 0;
+  transform: scale(0);
   cursor: var(--cursor-pointer);
   animation: d10-chip-pop var(--d-normal) var(--ease-bounce) forwards;
   transition: transform var(--d-fast) var(--ease-out),
               box-shadow var(--d-fast) var(--ease-out);
 }
 .step-D10__chip:hover {
-  transform: rotate(0deg) translate(-3px, -3px);
+  transform: translate(-3px, -3px);
   box-shadow: var(--shadow);
 }
 .step-D10__chip-ico {
@@ -278,26 +283,49 @@ const STYLE_TEXT = `
   60%  { opacity: 1; transform: scale(1.15); }
   100% { opacity: 1; transform: scale(1); }
 }
-.step-D10__cta-help {
-  font-family: var(--mono);
-  font-size: var(--t-tiny);
-  letter-spacing: 0.16em;
-  color: var(--ink);
-  opacity: 0.5;
-  text-align: center;
-  margin: 0;
+/* Tuko hote en bas-gauche, shake aleatoire */
+.step-D10__tuko-wrap {
+  position: absolute;
+  left: var(--s-5);
+  bottom: var(--s-3);
+  opacity: 0;
+  transform: translateX(-120%);
+  animation: d10-slide-in-tuko var(--d-slow) var(--ease-out) 1000ms forwards;
+  z-index: 2;
+  pointer-events: none;
+}
+.step-D10__tuko-img {
+  display: block;
+  width: clamp(140px, 12vw, 200px);
+  height: auto;
+  transform-origin: 50% 90%;
+}
+.step-D10__tuko-img.is-shaking {
+  animation: d10-tuko-shake 600ms var(--ease-out);
+}
+@keyframes d10-slide-in-tuko {
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes d10-tuko-shake {
+  0%   { transform: rotate(0deg)  translateX(0); }
+  15%  { transform: rotate(-8deg) translateX(-4px); }
+  30%  { transform: rotate(7deg)  translateX(4px); }
+  45%  { transform: rotate(-6deg) translateX(-3px); }
+  60%  { transform: rotate(5deg)  translateX(3px); }
+  75%  { transform: rotate(-3deg) translateX(-2px); }
+  100% { transform: rotate(0deg)  translateX(0); }
 }
 @keyframes d10-chip-pop {
-  0%   { transform: rotate(var(--rot, 0deg)) scale(0); }
-  60%  { transform: rotate(var(--rot, 0deg)) scale(1.15); }
-  100% { transform: rotate(var(--rot, 0deg)) scale(1); }
+  0%   { opacity: 0; transform: scale(0); }
+  60%  { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
 }
 @keyframes d10-jolt {
-  0%, 100% { transform: rotate(var(--rot, 0deg)) translate(0, 0); }
-  20%      { transform: rotate(var(--rot, 0deg)) translate(-2px, 1px); }
-  40%      { transform: rotate(var(--rot, 0deg)) translate(2px, -1px); }
-  60%      { transform: rotate(var(--rot, 0deg)) translate(-1px, 2px); }
-  80%      { transform: rotate(var(--rot, 0deg)) translate(1px, -1px); }
+  0%, 100% { transform: translate(0, 0); }
+  20%      { transform: translate(-2px, 1px); }
+  40%      { transform: translate(2px, -1px); }
+  60%      { transform: translate(-1px, 2px); }
+  80%      { transform: translate(1px, -1px); }
 }
 @keyframes d10-badge-flash {
   0%   { opacity: 0; transform: scale(0) rotate(-3deg); }
@@ -331,9 +359,6 @@ let inputEl = null;
 let ctaEl = null;
 let ctaHelpEl = null;
 
-// spawnEtincelles continu sur colonne CONDUCTEUR (idle subtil).
-let stopIdleSparks = null;
-
 function injectStyle() {
   if (document.querySelector('#' + STYLE_ID)) return;
   const el = document.createElement('style');
@@ -349,8 +374,6 @@ function removeStyle() {
 function makeChip(kind, label) {
   const li = document.createElement('li');
   li.className = 'step-D10__chip';
-  const rot = (Math.random() * 6 - 3).toFixed(2);
-  li.style.setProperty('--rot', `${rot}deg`);
   const ico = document.createElement('span');
   ico.className = 'step-D10__chip-ico';
   ico.textContent = kind === 'cond' ? '⚡' : '⊘';
@@ -441,7 +464,6 @@ function updateCta() {
   const ok = conducteurs.length >= 1 && isolants.length >= 1;
   ctaEl.disabled = !ok;
   ctaEl.classList.toggle('is-disabled', !ok);
-  if (ctaHelpEl) ctaHelpEl.style.visibility = ok ? 'hidden' : 'visible';
 }
 
 function savePersist() {
@@ -460,28 +482,19 @@ function addObjet(kind, rawLabel) {
   const li = makeChip(kind, label);
   lists[kind].appendChild(li);
 
-  // Clic chip = bascule colonne (geste de correction sans menu).
-  const onSwap = () => {
+  // Clic chip = supprime la chip.
+  const onRemove = () => {
     const idx = arr.indexOf(label);
     if (idx >= 0) arr.splice(idx, 1);
     li.remove();
-    addObjet(kind === 'cond' ? 'iso' : 'cond', label);
     savePersist();
     updateTotal(kind);
     updateCta();
   };
-  li.addEventListener('click', onSwap);
-  handlers.push([li, 'click', onSwap]);
+  li.addEventListener('click', onRemove);
+  handlers.push([li, 'click', onRemove]);
 
   joltNeighbors(kind);
-
-  // spawnEtincelles cyan one-shot sur la chip ajoutee cote CONDUCTEUR.
-  if (kind === 'cond') {
-    spawnEtincelles(li, {
-      densite: 'normale',
-      duree: 600,
-    });
-  }
 
   updateTotal(kind);
   updateCta();
@@ -530,7 +543,6 @@ function build(navAPI) {
   inputEl = document.createElement('input');
   inputEl.type = 'text';
   inputEl.className = 'input-mega step-D10__input';
-  inputEl.placeholder = 'tape l’objet, puis C ou I';
   inputEl.maxLength = 30;
   saisie.appendChild(inputEl);
   const btnC = document.createElement('button');
@@ -545,14 +557,10 @@ function build(navAPI) {
   saisie.appendChild(btnI);
   wrap.appendChild(saisie);
 
-  // Bottom : Tuko + CTA.
+  // Bottom : CTA centre.
   const bottom = document.createElement('div');
   bottom.className = 'step-D10__bottom';
-  const tuko = document.createElement('div');
-  tuko.className = 'tuko-mascotte';
-  tuko.dataset.pose = 'scientifique';
-  tuko.dataset.position = 'inline';
-  bottom.appendChild(tuko);
+  bottom.appendChild(document.createElement('span'));
 
   const ctaWrap = document.createElement('div');
   ctaWrap.className = 'step-D10__cta-wrap';
@@ -562,17 +570,37 @@ function build(navAPI) {
   ctaEl.textContent = '▶ ON CONTINUE';
   ctaEl.disabled = true;
   ctaWrap.appendChild(ctaEl);
-  ctaHelpEl = document.createElement('p');
-  ctaHelpEl.className = 'step-D10__cta-help';
-  ctaHelpEl.textContent = 'il faut au moins 1 dans chaque colonne';
-  ctaWrap.appendChild(ctaHelpEl);
   bottom.appendChild(ctaWrap);
 
   bottom.appendChild(document.createElement('span'));
   wrap.appendChild(bottom);
 
+  // Tuko hote en absolute bas-gauche
+  const tukoWrap = document.createElement('div');
+  tukoWrap.className = 'step-D10__tuko-wrap';
+  const tukoImg = document.createElement('img');
+  tukoImg.className = 'step-D10__tuko-img';
+  tukoImg.src = 'assets/sprites/tuko_hote.png';
+  tukoImg.alt = '';
+  tukoWrap.appendChild(tukoImg);
+  wrap.appendChild(tukoWrap);
+
   stage.appendChild(wrap);
   domNodes.push(wrap);
+
+  // Shake aleatoire (apres slide-in, intervalle 3-7s)
+  const scheduleShake = () => {
+    const delay = 3000 + Math.random() * 4000;
+    const t = setTimeout(() => {
+      tukoImg.classList.remove('is-shaking');
+      void tukoImg.offsetWidth;
+      tukoImg.classList.add('is-shaking');
+      scheduleShake();
+    }, delay);
+    timers.push(t);
+  };
+  const tFirstShake = setTimeout(scheduleShake, 2200);
+  timers.push(tFirstShake);
 
   // Entrance.
   requestAnimationFrame(() => {
@@ -582,16 +610,6 @@ function build(navAPI) {
     colI.classList.add('is-in');
     ctaEl.classList.add('is-in');
   });
-
-  // Idle subtil sur colonne CONDUCTEUR : spawnEtincelles douce continue.
-  // Lance apres l'entrance (delai 1.2s pour laisser le slide se terminer).
-  const tIdleStart = setTimeout(() => {
-    stopIdleSparks = spawnEtincelles(colC, {
-      densite: 'douce',
-      duree: 0,
-    });
-  }, 1200);
-  timers.push(tIdleStart);
 
   // CTA enabled apres entrance (initial : disabled si conducteurs/isolants vides).
   const tEnable = setTimeout(() => updateCta(), 1700);
@@ -607,32 +625,30 @@ function build(navAPI) {
   conducteurs.forEach((label) => {
     const li = makeChip('cond', label);
     lists.cond.appendChild(li);
-    const onSwap = () => {
+    const onRemove = () => {
       const idx = conducteurs.indexOf(label);
       if (idx >= 0) conducteurs.splice(idx, 1);
       li.remove();
-      addObjet('iso', label);
       savePersist();
       updateTotal('cond');
       updateCta();
     };
-    li.addEventListener('click', onSwap);
-    handlers.push([li, 'click', onSwap]);
+    li.addEventListener('click', onRemove);
+    handlers.push([li, 'click', onRemove]);
   });
   isolants.forEach((label) => {
     const li = makeChip('iso', label);
     lists.iso.appendChild(li);
-    const onSwap = () => {
+    const onRemove = () => {
       const idx = isolants.indexOf(label);
       if (idx >= 0) isolants.splice(idx, 1);
       li.remove();
-      addObjet('cond', label);
       savePersist();
       updateTotal('iso');
       updateCta();
     };
-    li.addEventListener('click', onSwap);
-    handlers.push([li, 'click', onSwap]);
+    li.addEventListener('click', onRemove);
+    handlers.push([li, 'click', onRemove]);
   });
   totals.cond.textContent = String(conducteurs.length);
   totals.iso.textContent = String(isolants.length);
@@ -655,20 +671,6 @@ function build(navAPI) {
   };
   inputEl.addEventListener('keydown', onInputKey);
   handlers.push([inputEl, 'keydown', onInputKey]);
-
-  const onWinKey = (e) => {
-    // Raccourcis C / I valides meme avec focus sur input (gain de temps).
-    if (e.key === 'c' || e.key === 'C') {
-      if (inputEl.value.trim()) { e.preventDefault(); submitInput('cond'); }
-    } else if (e.key === 'i' || e.key === 'I') {
-      if (inputEl.value.trim()) { e.preventDefault(); submitInput('iso'); }
-    } else if (e.key === 'Escape') {
-      const tag = (e.target?.tagName || '').toLowerCase();
-      if (tag === 'input' || tag === 'textarea') inputEl.blur();
-    }
-  };
-  window.addEventListener('keydown', onWinKey);
-  handlers.push([window, 'keydown', onWinKey]);
 
   const onCta = () => {
     if (ctaEl.disabled) return;
@@ -709,7 +711,6 @@ export default {
   },
 
   exit() {
-    if (stopIdleSparks) { stopIdleSparks(); stopIdleSparks = null; }
     handlers.forEach(([t, e, fn]) => t.removeEventListener(e, fn));
     handlers = [];
     timers.forEach(clearTimeout);

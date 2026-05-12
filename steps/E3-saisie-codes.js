@@ -43,10 +43,10 @@ const CSS = `
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  align-items: center;
+  grid-template-rows: auto auto auto;
+  align-items: start;
   justify-items: center;
-  padding: var(--s-4) var(--s-6) var(--s-3);
+  padding: var(--s-3) var(--s-6) var(--s-8);
   text-align: center;
   cursor: var(--cursor-default);
   gap: var(--s-3);
@@ -78,11 +78,13 @@ const CSS = `
 }
 
 .step-E3__team {
-  padding: var(--s-3);
+  padding: var(--s-4) var(--s-5);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--s-2);
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-height: 340px;
   opacity: 0;
   transform: translateY(40px);
   animation: e3-team-in var(--d-slow) var(--ease-out) forwards;
@@ -101,8 +103,16 @@ const CSS = `
 
 .step-E3__team-cells {
   display: flex;
-  gap: var(--s-2);
+  gap: var(--s-3);
   margin-top: var(--s-1);
+}
+
+/* Cases digit team : agrandies pour contenir le chiffre hero */
+.step-E3__team-cells .cell-digit {
+  width: 130px;
+  height: 180px;
+  font-size: 120px;
+  line-height: 1;
 }
 
 .step-E3__team-hint {
@@ -172,13 +182,15 @@ const CSS = `
 .step-E3__final-col:nth-child(6) { animation-delay: 1.40s; }
 
 .step-E3__final-cell {
-  width: 80px;
-  height: 100px;
-  font-size: var(--t-hero);
+  width: 110px;
+  height: 150px;
+  font-size: 96px;
+  line-height: 1;
 }
 .step-E3__final-cell .step-E3__waiting {
   font-family: var(--display);
-  font-size: var(--t-h1);
+  font-size: 64px;
+  line-height: 1;
   color: var(--ink);
   opacity: 0.4;
   animation: e3-waiting-blink 1.4s ease-in-out infinite;
@@ -212,10 +224,11 @@ const CSS = `
   pointer-events: none;
   display: grid;
   place-items: center;
-  width: 80px;
-  height: 100px;
+  width: 110px;
+  height: 150px;
   font-family: var(--display);
-  font-size: var(--t-h1);
+  font-size: 96px;
+  line-height: 1;
   font-weight: 900;
   color: var(--ink);
   background: var(--accent-3);
@@ -234,12 +247,12 @@ const CSS = `
   border-radius: 50%;
 }
 
-/* ---- Bottom row (Tuko mascotte = position absolue bas-gauche, ne prend pas de place) ---- */
+/* ---- Bottom row (Tuko absolute, ne prend pas de place ici) ---- */
 .step-E3__bottom {
   display: grid;
-  place-items: end center;
+  place-items: start center;
   width: 100%;
-  padding-bottom: var(--s-1);
+  margin-top: var(--s-2);
 }
 .step-E3__cta {
   opacity: 0;
@@ -247,6 +260,38 @@ const CSS = `
   transition: opacity var(--d-normal) var(--ease-out), transform var(--d-normal) var(--ease-bounce);
 }
 .step-E3__cta.is-shown { opacity: 1; transform: scale(1); }
+
+/* Tuko_ok grand en bas-gauche (sprite reel + shake aleatoire) */
+.step-E3__tuko-wrap {
+  position: absolute;
+  left: var(--s-5);
+  bottom: var(--s-3);
+  opacity: 0;
+  transform: translateX(-120%);
+  animation: e3-slide-in-tuko var(--d-slow) var(--ease-out) 0.8s forwards;
+  z-index: 5;
+  pointer-events: none;
+}
+.step-E3__tuko-img {
+  display: block;
+  width: clamp(220px, 22vw, 360px);
+  height: auto;
+  transform-origin: 50% 90%;
+}
+.step-E3__tuko-img.is-shaking {
+  animation: e3-tuko-shake 600ms var(--ease-out);
+}
+@keyframes e3-slide-in-tuko {
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes e3-tuko-shake {
+  0%   { transform: rotate(0deg)  translateX(0); }
+  15%  { transform: rotate(-7deg) translateX(-3px); }
+  30%  { transform: rotate(6deg)  translateX(3px); }
+  45%  { transform: rotate(-5deg) translateX(-2px); }
+  60%  { transform: rotate(4deg)  translateX(2px); }
+  100% { transform: rotate(0deg)  translateX(0); }
+}
 
 /* ---- Animations ---- */
 @keyframes e3-smash {
@@ -399,12 +444,29 @@ function buildDom(navAPI) {
 
   wrap.appendChild(main);
 
-  // Tuko scribe — composant partage .tuko-mascotte (position absolue bas-gauche)
-  const tuko = document.createElement('div');
-  tuko.className = 'tuko-mascotte';
-  tuko.dataset.pose = 'scribe';
-  tuko.dataset.position = 'bas-gauche';
-  wrap.appendChild(tuko);
+  // Tuko_ok grand en bas-gauche
+  const tukoWrap = document.createElement('div');
+  tukoWrap.className = 'step-E3__tuko-wrap';
+  const tukoImg = document.createElement('img');
+  tukoImg.className = 'step-E3__tuko-img';
+  tukoImg.src = 'assets/sprites/tuko_ok.png';
+  tukoImg.alt = '';
+  tukoWrap.appendChild(tukoImg);
+  wrap.appendChild(tukoWrap);
+
+  // Shake aleatoire (3-7s)
+  const scheduleShake = () => {
+    const delay = 3000 + Math.random() * 4000;
+    const t = setTimeout(() => {
+      tukoImg.classList.remove('is-shaking');
+      void tukoImg.offsetWidth;
+      tukoImg.classList.add('is-shaking');
+      scheduleShake();
+    }, delay);
+    timers.push(t);
+  };
+  const tFirstShake = setTimeout(scheduleShake, 2200);
+  timers.push(tFirstShake);
 
   // Bottom : CTA centree (Tuko est en position absolue, ne prend pas de place)
   const bottom = document.createElement('div');
@@ -413,7 +475,7 @@ function buildDom(navAPI) {
   const cta = document.createElement('button');
   cta.type = 'button';
   cta.className = 'cta-primary step-E3__cta';
-  cta.textContent = '▶ ON CONTINUE';
+  cta.textContent = 'on continue';
   bottom.appendChild(cta);
 
   wrap.appendChild(bottom);

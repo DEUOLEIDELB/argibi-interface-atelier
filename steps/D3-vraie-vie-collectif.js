@@ -17,192 +17,148 @@ const STYLE_TEXT = `
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  padding: var(--s-4) var(--s-5);
+  grid-template-rows: auto 1fr;
+  padding: var(--s-3) var(--s-5) var(--s-5);
   gap: var(--s-3);
-  pointer-events: none;
 }
 .step-D3__title-block {
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--s-1);
 }
 .step-D3__titre {
   font-family: var(--display);
-  font-size: var(--t-h1);
+  font-size: clamp(40px, 4vw, 56px);
   font-weight: 900;
   letter-spacing: -0.01em;
   text-transform: uppercase;
   color: var(--ink);
   margin: 0;
-  opacity: 0;
-  transform: scale(0);
-}
-.step-D3__titre.is-in {
-  animation: d3-smash 400ms var(--ease-bounce) forwards;
-}
-@keyframes d3-smash {
-  0%   { opacity: 0; transform: scale(0); }
-  60%  { opacity: 1; transform: scale(1.15); }
-  100% { opacity: 1; transform: scale(1); }
 }
 .step-D3__sous {
   font-family: var(--display);
-  font-size: var(--t-body-xl);
-  font-weight: 600;
+  font-size: clamp(40px, 3.6vw, 56px);
+  font-weight: 700;
   text-transform: lowercase;
   color: var(--ink);
-  margin: 0;
-  opacity: 0;
-  transform: translateY(20px);
+  margin: var(--s-3) 0 0;
 }
-.step-D3__sous.is-in {
-  animation: d3-fade-up 400ms var(--ease-out) 250ms forwards;
-}
-@keyframes d3-fade-up {
-  to { opacity: 1; transform: translateY(0); }
-}
+/* Grille 2 lignes x 2 colonnes, retrecie 1/3 pour cadrer les images. */
 .step-D3__grid {
   pointer-events: auto;
-  align-self: stretch;
-}
-/* Cascade d'entree des 4 cards (composant partage .scenario-card.is-in) */
-.step-D3__grid .scenario-card:nth-child(1).is-in { animation-delay: 600ms; }
-.step-D3__grid .scenario-card:nth-child(2).is-in { animation-delay: 800ms; }
-.step-D3__grid .scenario-card:nth-child(3).is-in { animation-delay: 1000ms; }
-.step-D3__grid .scenario-card:nth-child(4).is-in { animation-delay: 1200ms; }
-/* Option : idle pulse quand la card n'est pas votee + bars graph miniatures.
-   Le composant partage .scenario-card__option fournit deja base + hover + is-active. */
-.step-D3__option-content {
+  align-self: center;
+  justify-self: center;
   display: grid;
-  gap: 4px;
-  place-items: center;
-}
-.scenario-card:not(.is-decided) .scenario-card__option {
-  animation: d3-option-pulse 2s ease-in-out infinite;
-}
-@keyframes d3-option-pulse {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.02); }
-}
-.scenario-card__option.is-dimmed {
-  opacity: 0.55;
-}
-.step-D3__option__bars {
-  display: inline-flex;
-  align-items: end;
-  gap: 3px;
-  height: 16px;
-}
-.step-D3__option__bar {
-  width: 5px;
-  background: var(--ink);
-  border-radius: 1px;
-}
-.step-D3__option__bar--short { height: 10px; }
-.step-D3__option__bar--wide  { height: 14px; width: 16px; }
-.scenario-card__option:hover .step-D3__option__bars {
-  animation: d3-option-demo 800ms ease-out 1;
-}
-@keyframes d3-option-demo {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.15); }
-  100% { transform: scale(1); }
-}
-/* Mini-Tuko qui sort d'une card sur vote long/double, va vers l'image et revient. */
-.step-D3__mini-tuko {
-  position: absolute;
-  bottom: 80px;
-  left: 50%;
-  width: 36px;
-  height: 36px;
-  background: var(--accent-4);
-  border: var(--border-thin);
-  border-radius: var(--r-pill);
-  pointer-events: none;
-  transform: translateX(-50%);
-  animation: d3-mini-go 1100ms ease-in-out forwards;
-}
-@keyframes d3-mini-go {
-  0%   { transform: translateX(-50%) translateY(0) scale(0.6); opacity: 0; }
-  20%  { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
-  50%  { transform: translateX(-50%) translateY(-50px) scale(1); opacity: 1; }
-  80%  { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
-  100% { transform: translateX(-50%) translateY(0) scale(0.6); opacity: 0; }
-}
-/* Onde de validation quand 4/4 cards sont votees. */
-.step-D3__grid.is-wave .scenario-card {
-  animation: d3-wave 500ms ease-out 1;
-}
-.step-D3__grid.is-wave .scenario-card:nth-child(1) { animation-delay: 0ms; }
-.step-D3__grid.is-wave .scenario-card:nth-child(2) { animation-delay: 120ms; }
-.step-D3__grid.is-wave .scenario-card:nth-child(3) { animation-delay: 240ms; }
-.step-D3__grid.is-wave .scenario-card:nth-child(4) { animation-delay: 360ms; }
-@keyframes d3-wave {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.04); }
-}
-/* Bottom row : Tuko mascotte partage + CTA primaire. */
-.step-D3__bottom {
-  display: grid;
-  grid-template-columns: 200px 1fr 200px;
-  align-items: end;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: auto;
   gap: var(--s-3);
-  pointer-events: auto;
+  width: 82%;
+  max-width: 1400px;
 }
-.step-D3 .tuko-mascotte[data-position="inline"] {
-  --tuko-mascotte-size: 140px;
-  opacity: 0;
-  transform: translateX(-100px);
+.step-D3 .scenario-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0 !important;
+  margin: 0;
+  gap: 0;
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  border-radius: var(--r-md);
+  min-width: 0;
+  overflow: hidden;
 }
-.step-D3 .tuko-mascotte[data-position="inline"].is-in {
-  animation: d3-tuko-in var(--d-slow) var(--ease-out) 1500ms forwards;
+.step-D3 img.scenario-card__image {
+  width: 100%;
+  height: clamp(220px, 30vh, 360px);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
 }
-@keyframes d3-tuko-in {
-  to { opacity: 1; transform: translateX(0); }
+.step-D3 .scenario-card__title {
+  padding: var(--s-3) var(--s-3) 0;
+  margin: 0;
 }
-/* Reactions discretes de Tuko principal selon tendance des votes. */
-.step-D3 .tuko-mascotte.is-reacting--court {
-  animation: d3-tuko-claque 600ms ease-in-out 1;
+.step-D3 .scenario-card__options {
+  padding: var(--s-3);
+  margin: 0;
 }
-.step-D3 .tuko-mascotte.is-reacting--long {
-  animation: d3-tuko-watch 700ms ease-in-out 1;
+.step-D3 .scenario-card__title {
+  font-family: var(--display);
+  font-size: clamp(26px, 2vw, 34px);
+  font-weight: 900;
+  line-height: 1.1;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 0;
+  text-wrap: balance;
 }
-.step-D3 .tuko-mascotte.is-reacting--double {
-  animation: d3-tuko-double 600ms ease-in-out 1;
+.step-D3 .scenario-card__options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-2);
 }
-@keyframes d3-tuko-claque {
-  0%, 100% { transform: rotate(0); }
-  35%      { transform: rotate(-4deg); }
-  65%      { transform: rotate(4deg); }
+.step-D3 .scenario-card__option {
+  padding: var(--s-3);
+  font-family: var(--display);
+  font-size: clamp(20px, 1.5vw, 26px);
+  font-weight: 900;
+  text-transform: uppercase;
+  background: var(--paper);
+  border: var(--border);
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  cursor: var(--cursor-pointer);
+  box-shadow: var(--shadow-sm);
+  transition: background 150ms ease-out, color 150ms ease-out,
+              transform 150ms ease-out, box-shadow 150ms ease-out;
 }
-@keyframes d3-tuko-watch {
-  0%, 100% { transform: rotate(0); }
-  50%      { transform: rotate(-3deg) translateY(-2px); }
+.step-D3 .scenario-card__option:hover {
+  background: var(--bg-2);
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow);
 }
-@keyframes d3-tuko-double {
-  0%, 100% { transform: scale(1); }
-  25%      { transform: scale(0.96); }
-  50%      { transform: scale(1); }
-  75%      { transform: scale(0.96); }
+.step-D3 .scenario-card__option:active {
+  transform: translate(0, 0);
+  box-shadow: var(--shadow-sm);
+}
+/* PASS : option choisie correcte (ou debat) = jaune ecrit + grosse cocher. */
+.step-D3 .scenario-card__option.is-active {
+  background: var(--accent-3);
+  color: var(--ink);
+  transform: scale(1.05);
+  box-shadow: var(--shadow);
+}
+.step-D3 .scenario-card__option.is-active::after {
+  content: ' ✓';
+  font-weight: 900;
+}
+.step-D3 .scenario-card__option.is-dimmed {
+  opacity: 0.35;
+}
+/* Mauvaise reponse : shake sur l'option clickee uniquement.
+   La card reste stable (jamais d'animation sur .scenario-card). */
+.step-D3 .scenario-card__option.is-wrong {
+  animation: d3-option-wrong 480ms ease-out;
+}
+@keyframes d3-option-wrong {
+  0%   { background: var(--paper);    color: var(--ink);   transform: translateX(0); }
+  15%  { background: var(--accent-4); color: var(--paper); transform: translateX(-6px); }
+  30%  { background: var(--accent-4); color: var(--paper); transform: translateX(6px); }
+  45%  { background: var(--accent-4); color: var(--paper); transform: translateX(-4px); }
+  60%  { background: var(--accent-4); color: var(--paper); transform: translateX(4px); }
+  75%  { background: var(--accent-4); color: var(--paper); transform: translateX(0); }
+  100% { background: var(--paper);    color: var(--ink);   transform: translateX(0); }
 }
 .step-D3__cta {
-  justify-self: center;
-  align-self: end;
-  opacity: 0;
-  transform: scale(0);
-  animation: none;
-}
-.step-D3__cta.is-in {
-  animation: d3-cta-pop 350ms var(--ease-bounce) 1700ms forwards,
-             cta-idle-pulse 2s var(--ease-out) 2100ms infinite;
-}
-@keyframes d3-cta-pop {
-  0%   { opacity: 0; transform: scale(0); }
-  60%  { opacity: 1; transform: scale(1.15); }
-  100% { opacity: 1; transform: scale(1); }
+  position: absolute;
+  bottom: var(--s-3);
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  z-index: 10;
 }
 .step-D3__cta.is-disabled {
   opacity: 0.5;
@@ -211,17 +167,11 @@ const STYLE_TEXT = `
 `;
 
 const SCENARIOS = [
-  { id: 1, title: 'TU SONNES POUR DIRE COUCOU',  imageHint: "sonnette d'ami" },
-  { id: 2, title: 'TU ALLUMES TA CHAMBRE',        imageHint: 'interrupteur de chambre' },
-  { id: 3, title: 'TU ALERTES EN URGENCE',        imageHint: 'klaxon de voiture' },
-  { id: 4, title: 'TU VALIDES DANS UN JEU',       imageHint: 'bouton OK manette' },
+  { id: 1, title: 'TU LANCES LE MICRO-ONDES', image: 'assets/sprites/D3/micro_onde.png',    correct: 'court'  },
+  { id: 2, title: 'TU SÈCHES TES CHEVEUX',    image: 'assets/sprites/D3/seche_cheveux.jpg', correct: 'long'   },
+  { id: 3, title: 'TU TOQUES À LA PORTE',     image: 'assets/sprites/D3/toque_porte.png',   correct: 'double' },
+  { id: 4, title: 'TU SONNES CHEZ UN AMI',    image: 'assets/sprites/D3/sonnette.png',      debat: true       },
 ];
-
-const KIND_BARS = {
-  court:  () => [{ cls: 'short' }],
-  long:   () => [{ cls: 'wide' }],
-  double: () => [{ cls: 'short' }, { cls: 'short' }],
-};
 
 let scene = null;
 let domNodes = [];
@@ -238,7 +188,6 @@ let scenariosState = {}; // id -> 'court'|'long'|'double'
 let totalVotes = 0;
 let cardsEls = [];
 let optionsByCard = {}; // id -> { court, long, double }
-let tukoMainEl = null;
 let ctaEl = null;
 let gridEl = null;
 
@@ -256,88 +205,46 @@ function removeStyle() {
 
 function pushTimer(t) { timers.push(t); return t; }
 
-function buildOptionBars(kind) {
-  const wrap = document.createElement('span');
-  wrap.className = 'step-D3__option__bars';
-  KIND_BARS[kind]().forEach((b) => {
-    const bar = document.createElement('span');
-    bar.className = `step-D3__option__bar step-D3__option__bar--${b.cls}`;
-    wrap.appendChild(bar);
-  });
-  return wrap;
-}
-
-function spawnMiniTuko(cardEl) {
-  if (!cardEl) return;
-  const mini = document.createElement('span');
-  mini.className = 'step-D3__mini-tuko';
-  cardEl.appendChild(mini);
-  pushTimer(setTimeout(() => mini.remove(), 1200));
-}
-
-function reactTukoToTrend() {
-  if (!tukoMainEl) return;
-  if (totalVotes < 3) return;
-  const counts = { court: 0, long: 0, double: 0 };
-  Object.values(scenariosState).forEach((k) => { counts[k] = (counts[k] || 0) + 1; });
-  let top = null;
-  let topCount = 0;
-  for (const [k, c] of Object.entries(counts)) {
-    if (c > topCount) { topCount = c; top = k; }
-  }
-  if (!top) return;
-  if (totalVotes % 3 !== 0) return;
-  tukoMainEl.classList.remove('is-reacting--court', 'is-reacting--long', 'is-reacting--double');
-  // force reflow
-  void tukoMainEl.offsetWidth;
-  tukoMainEl.classList.add(`is-reacting--${top}`);
-  pushTimer(setTimeout(() => {
-    tukoMainEl?.classList.remove(`is-reacting--${top}`);
-  }, 800));
-}
-
-function maybeWaveAndComplete() {
-  if (Object.keys(scenariosState).length === SCENARIOS.length) {
-    gridEl?.classList.add('is-wave');
-    pushTimer(setTimeout(() => gridEl?.classList.remove('is-wave'), 1200));
-  }
-}
-
 function persistState() {
   if (!navAPIRef) return;
   // Etat : scenarios = {1..4: 'court'|'long'|'double'}.
   navAPIRef.saveState({ steps: { D3: { scenarios: { ...scenariosState } } } });
 }
 
-function onVote(scenarioId, kind, cardEl) {
-  const previous = scenariosState[scenarioId];
+function onVote(scenarioId, kind) {
+  const scenario = SCENARIOS.find((s) => s.id === scenarioId);
+  const optBtn = optionsByCard[scenarioId]?.[kind];
+  if (!optBtn) return;
+
+  // Carte deja validee : on ignore les clics suivants (option doree).
+  if (scenariosState[scenarioId] !== undefined) return;
+
+  // Mauvaise reponse (hors debat) : shake + flash rose sur l'option, retry possible.
+  if (!scenario.debat && kind !== scenario.correct) {
+    optBtn.classList.remove('is-wrong');
+    void optBtn.offsetWidth; // reflow pour relancer l'anim
+    optBtn.classList.add('is-wrong');
+    pushTimer(setTimeout(() => optBtn.classList.remove('is-wrong'), 500));
+    play('error');
+    return;
+  }
+
+  // Reponse acceptee (correcte ou debat) : on dore l'option, on grise les autres.
   scenariosState[scenarioId] = kind;
-  if (previous === undefined) totalVotes++;
-
-  // Update options state (composant partage : .is-active pour selectionne, .is-dimmed local).
+  totalVotes++;
   Object.entries(optionsByCard[scenarioId] || {}).forEach(([k, btn]) => {
-    btn.classList.remove('is-active', 'is-dimmed');
-    if (k === kind) btn.classList.add('is-active');
-    else btn.classList.add('is-dimmed');
+    btn.classList.remove('is-wrong');
+    if (k === kind) {
+      btn.classList.add('is-active');
+      btn.classList.remove('is-dimmed');
+    } else {
+      btn.classList.add('is-dimmed');
+      btn.classList.remove('is-active');
+    }
   });
-  cardEl.classList.add('is-decided');
-  play('pop');
+  play(scenario.debat ? 'pop' : 'success');
 
-  // Mini-Tuko qui anime le scenario (Long ou Double : va toucher l'image).
-  if (kind === 'long' || kind === 'double') {
-    spawnMiniTuko(cardEl);
-  }
-
-  // CTA active des le 1er vote.
-  if (ctaEl) {
-    ctaEl.classList.remove('is-disabled');
-    ctaEl.disabled = false;
-  }
-
-  reactTukoToTrend();
-  maybeWaveAndComplete();
   persistState();
-
   if (navAPIRef) navAPIRef.markComplete();
 }
 
@@ -358,21 +265,22 @@ function build(navAPI) {
   titleBlock.appendChild(sous);
   wrap.appendChild(titleBlock);
 
-  // Grid 2x2 : composant partage .scenario-card-grid .
+  // Grid 2x2 (override total : on n'utilise PAS .scenario-card-grid partage
+  // pour eviter padding/gap injectes par le composant).
   gridEl = document.createElement('div');
-  gridEl.className = 'scenario-card-grid step-D3__grid';
+  gridEl.className = 'step-D3__grid';
   cardsEls = [];
   optionsByCard = {};
   SCENARIOS.forEach((sc) => {
-    // Composant partage .scenario-card .
     const card = document.createElement('div');
     card.className = 'scenario-card';
     card.dataset.scenarioId = String(sc.id);
 
-    // Image placeholder via composant partage .scenario-card__image (.placeholder-image).
-    const img = document.createElement('div');
-    img.className = 'scenario-card__image placeholder-image';
-    img.textContent = `[PLACEHOLDER : ${sc.imageHint}]`;
+    const img = document.createElement('img');
+    img.className = 'scenario-card__image';
+    img.src = sc.image;
+    img.alt = '';
+    img.loading = 'lazy';
     card.appendChild(img);
 
     const title = document.createElement('h3');
@@ -389,17 +297,9 @@ function build(navAPI) {
       btn.type = 'button';
       btn.className = 'scenario-card__option';
       btn.dataset.kind = kind;
+      btn.textContent = kind;
 
-      // Contenu : label + mini bars (specifique D3).
-      const content = document.createElement('span');
-      content.className = 'step-D3__option-content';
-      const label = document.createElement('span');
-      label.textContent = kind;
-      content.appendChild(label);
-      content.appendChild(buildOptionBars(kind));
-      btn.appendChild(content);
-
-      const onClick = () => onVote(sc.id, kind, card);
+      const onClick = () => onVote(sc.id, kind);
       btn.addEventListener('click', onClick);
       handlers.push([btn, 'click', onClick]);
 
@@ -413,53 +313,20 @@ function build(navAPI) {
   });
   wrap.appendChild(gridEl);
 
-  // Bottom row : Tuko mascotte partage + CTA
-  const bottom = document.createElement('div');
-  bottom.className = 'step-D3__bottom';
-  tukoMainEl = document.createElement('div');
-  tukoMainEl.className = 'tuko-mascotte';
-  tukoMainEl.dataset.pose = 'pedagogique';
-  tukoMainEl.dataset.position = 'inline';
-  bottom.appendChild(tukoMainEl);
-
-  ctaEl = document.createElement('button');
-  ctaEl.type = 'button';
-  ctaEl.className = 'cta-primary step-D3__cta is-disabled';
-  ctaEl.textContent = '▶ ON CONTINUE';
-  ctaEl.disabled = true;
-  bottom.appendChild(ctaEl);
-
-  bottom.appendChild(document.createElement('span'));
-  wrap.appendChild(bottom);
+  // Pas de CTA : navigation par fleche / espace (shell) sur demande Taki.
+  ctaEl = null;
 
   stage.appendChild(wrap);
   domNodes.push(wrap);
 
-  // Trigger entrance (.scenario-card.is-in fournit l'animation pop partage).
-  requestAnimationFrame(() => {
-    titre.classList.add('is-in');
-    sous.classList.add('is-in');
-    cardsEls.forEach((c) => c.classList.add('is-in'));
-    tukoMainEl.classList.add('is-in');
-    ctaEl.classList.add('is-in');
-  });
-
-  // CTA click
-  const onCta = () => {
-    if (ctaEl.disabled) return;
-    play('whoosh');
-    ctaEl.disabled = true;
-    navAPI.next();
-  };
-  ctaEl.addEventListener('click', onCta);
-  handlers.push([ctaEl, 'click', onCta]);
-
-  // Restore state from savedState if any.
+  // Restore state from savedState (reset puis re-applique via onVote
+  // pour que les visuels soient appliques meme apres reload).
   if (savedStateRef && savedStateRef.scenarios) {
-    Object.entries(savedStateRef.scenarios).forEach(([sid, kind]) => {
-      const id = Number(sid);
-      const cardEl = cardsEls.find((c) => Number(c.dataset.scenarioId) === id);
-      if (cardEl) onVote(id, kind, cardEl);
+    const saved = { ...savedStateRef.scenarios };
+    scenariosState = {};
+    totalVotes = 0;
+    Object.entries(saved).forEach(([sid, kind]) => {
+      onVote(Number(sid), kind);
     });
   }
 }
@@ -501,7 +368,7 @@ export default {
     domNodes = [];
     cardsEls = [];
     optionsByCard = {};
-    tukoMainEl = ctaEl = gridEl = null;
+    ctaEl = gridEl = null;
     if (scene) {
       scene.destroy({ children: true });
       scene = null;
