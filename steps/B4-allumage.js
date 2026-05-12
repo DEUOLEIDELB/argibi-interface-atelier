@@ -12,6 +12,9 @@
 //           15s apres 30s. Etincelles cyan via spawnEtincelles partage.
 //           Tuko emerveille.
 //
+// .matrice-8x8 partagee remplace l'implementation locale V1
+// (.step-B4__matrix + .step-B4__pixel + .step-B4__shockwave + Pixi sparkles
+// hex 0x1DC1F9). 6 pages reutilisent ce composant (B4, C1, D5, E2, E4, F1).
 
 import { Container } from 'pixi.js';
 import { app } from '../core/app.js';

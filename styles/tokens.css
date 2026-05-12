@@ -82,11 +82,12 @@
   /* ----- 6. Layout figé ----- */
   --shell-top-h:    80px;
   --shell-bottom-h: 80px;
-  /* Stage : prend toute la place dispo entre les bandeaux. Les contraintes
-     reelles dans base.css (min(--stage-w, 100vw - 64) etc.) bornent au
-     viewport. Resultat : ~97% largeur, ~85% hauteur sur 1920x1080 F11. */
+  /* Stage : prend toute la place dispo entre les bandeaux. */
   --stage-w:        100vw;
   --stage-h:        100vh;
+  /* Zoom global du contenu (CSS zoom). Reduire pour rendre tout plus
+     petit, augmenter pour grossir. 1 = taille naturelle. */
+  --stage-zoom:     0.55;
 
   /* ----- 7. Curseurs Tuko : DESACTIVES (curseurs natifs). -----
      Pour reactiver : remettre les url('../assets/cursors/*.png') ci-dessous. */

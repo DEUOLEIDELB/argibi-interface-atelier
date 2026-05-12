@@ -65,11 +65,14 @@ img { max-width: 100%; height: auto; display: block; }
   overflow: hidden;
 }
 
+/* #stage : simple, prend la place dispo + zoom global pour rétrécir
+   tout le contenu d'un coup. Ajuste --stage-zoom dans tokens.css. */
 #stage {
   position: relative;
-  width: min(var(--stage-w), calc(100vw - var(--s-4) * 2));
-  height: min(var(--stage-h), calc(100vh - var(--shell-top-h) - var(--shell-bottom-h)));
+  width: 100%;
+  height: 100%;
   background: var(--bg);
+  zoom: var(--stage-zoom, 1);
 }
 
 /* ----- Shell controls ------------------------------------------------------ */
